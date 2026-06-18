@@ -226,11 +226,14 @@ function popBubble(b){
   else if(b.kind==="plus"){addRing(b.x,b.y); if(mode==="clear"){tapsLeft++;clearHudL();banner("➕1 点击");}}
   else addRing(b.x,b.y);
 }
-function rainbowPop(x,y){ // 削弱：只炸触发点附近范围内的同色球（要瞄准，不再全场秒清）
-  const R=140;
+function rainbowPop(x,y){ // 削弱：只引爆触发点附近、最近的 3 个同色球（不再清一片）
+  const R=75, MAX=3;
   const cnt={}; bubbles.forEach(b=>{ if(b.alive&&Math.hypot(b.x-x,b.y-y)<R)cnt[b.color]=(cnt[b.color]||0)+1; });
   let bestC=null,bn=0; for(const c in cnt)if(cnt[c]>bn){bn=cnt[c];bestC=c;}
-  if(bestC) bubbles.forEach(b=>{ if(b.alive&&b.color===bestC&&Math.hypot(b.x-x,b.y-y)<R)popBubble(b); }); }
+  if(!bestC)return;
+  bubbles.filter(b=>b.alive&&b.color===bestC&&Math.hypot(b.x-x,b.y-y)<R)
+    .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))
+    .slice(0,MAX).forEach(popBubble); }
 function crossBlast(x,y){ addRing(x,y,72);beam(y,true);beam(x,false);shakeMag=Math.min(13,shakeMag+4);
   const band=33; bubbles.forEach(bb=>{ if(bb.alive&&(Math.abs(bb.y-y)<band||Math.abs(bb.x-x)<band))popBubble(bb); }); }
 function beam(p,h){ const d=document.createElement("div");d.className="beam";
