@@ -231,7 +231,7 @@ function loop(t){
 function popBubble(b){
   b.alive=false;chainN++;popped++;score+=chainN; $("score").textContent=score;
   if(score>best){best=score;localStorage.setItem(bestKey,best);$("best").textContent=best;}
-  b.el.classList.add("pop");playPop(chainN);buzz(10);particles(b.x,b.y, b.kind==="rainbow"?"#fff":b.color);
+  b.el.classList.add("pop");playPop(chainN);buzz(10);particles(b.x,b.y,b.color);
   shakeMag=Math.min(11,shakeMag+1.6+chainN*0.18);showCombo();
   if(mode==="endless")$("hudR").innerHTML="已炸 <b>"+popped+"</b>"; else $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球";
   if(b.kind==="cross")crossBlast(b.x,b.y);
