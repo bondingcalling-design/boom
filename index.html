@@ -152,7 +152,7 @@ function stopBGM(){ if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;} }
 function buzz(ms){ if(vibOn && navigator.vibrate) navigator.vibrate(ms); }
 
 /* ---------- configs ---------- */
-function levelConf(lv){ return {count:Math.min(38,14+lv*2), goal:Math.max(2,Math.ceil(Math.min(38,14+lv*2)*Math.min(0.85,0.30+lv*0.055))), speed:Math.min(2.4,1+lv*0.06)}; }
+function levelConf(lv){ return {count:Math.min(38,14+lv*2), goal:Math.max(3,Math.ceil(Math.min(38,14+lv*2)*Math.min(0.85,0.18+lv*0.055))), speed:Math.min(2.4,0.9+lv*0.06)}; }
 function clearConf(lv){ return {count:Math.min(46,18+lv*3), budget:5, obs:Math.min(6,lv-1), speed:Math.min(2.2,0.9+lv*0.05)}; }
 
 /* ---------- HUD ---------- */
