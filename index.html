@@ -138,7 +138,7 @@ let bgmGain=null,bgmTimer=null;
 const BGM=[261.63,293.66,329.63,392.0,440.0];
 function startBGM(){
   if(!actx||!bgmOn||bgmTimer)return;
-  if(!bgmGain){bgmGain=actx.createGain();bgmGain.gain.value=0.06;bgmGain.connect(actx.destination);}
+  if(!bgmGain){bgmGain=actx.createGain();bgmGain.gain.value=0.14;bgmGain.connect(actx.destination);}
   const tick=()=>{ if(!bgmOn){bgmTimer=null;return;}
     const f=BGM[Math.floor(Math.random()*BGM.length)]*(Math.random()<0.5?1:0.5);
     const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;
@@ -172,7 +172,8 @@ function applyTheme(lv){ wrap.style.background=THEMES[(lv-1)%THEMES.length]; }
 
 function spawnBubble(speed){
   const rnd=Math.random(); let kind="normal";
-  if(rnd<0.04) kind="big"; else if(rnd<0.13) kind="cross";
+  const allowSpecial = !(mode==="endless" && level<=3);   // 闯关前3关不放特殊球，否则一点就过
+  if(allowSpecial){ if(rnd<0.04) kind="big"; else if(rnd<0.13) kind="cross"; }
   const baseR=Math.max(10,16-level*0.4);   // 球随关卡逐渐变小(早期大好打，后期小变难)，下限10
   const r=(kind==="big"?baseR+7:baseR+Math.random()*3);
   const color=COLORS[Math.floor(Math.random()*COLORS.length)];
