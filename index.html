@@ -43,6 +43,7 @@
   .controls{margin-top:10px;display:flex;align-items:center;justify-content:center;gap:12px;width:100%;max-width:430px;}
   .btn{background:var(--accent);color:#3a2c00;border:none;border-radius:12px;padding:12px 20px;font-size:15px;font-weight:900;cursor:pointer;}
   .btn.ghost{background:#2a2d44;color:#cfd3f5;}
+  .btn:disabled{opacity:.4;cursor:default;}
   .start .btn,.overlay .btn{width:min(74%,240px);}
   .toggles{display:flex;gap:4px;}
   .tg{background:#22263a;border:none;border-radius:9px;font-size:16px;width:36px;height:36px;cursor:pointer;line-height:1;}
@@ -100,6 +101,13 @@
       <button class="btn" id="againBtn">再来一局</button>
       <button class="btn ghost" id="menuBtn">换模式</button>
     </div>
+
+    <div class="overlay" id="rescue">
+      <h2>还差一点！</h2>
+      <div class="res" id="rescueMsg">—</div>
+      <button class="btn" id="rescueBtn">💥 再炸一次</button>
+      <button class="btn ghost" id="giveupBtn">结束</button>
+    </div>
   </div>
 
   <div class="items">
@@ -125,7 +133,7 @@ const RAINBOW="conic-gradient(#ff7eb6,#7afcff,#feff9c,#a3ff8c,#c79bff,#ff9b6b,#f
 const THEMES=["linear-gradient(160deg,#12152a,#0c0e1c)","linear-gradient(160deg,#0c2438,#06141f)","linear-gradient(160deg,#2a1430,#14060f)","linear-gradient(160deg,#102a1a,#06140d)","linear-gradient(160deg,#2a2410,#140f06)"];
 const wrap=$("wrap");
 let W,H,bubbles,rings,obstacles,level,score,best,bestKey,popped,goal,chainN,playing,resolving,raf,lastT;
-let mode="endless",tapUsed,tapsLeft,totalStars,chaining=false,shakeMag=0,actx=null,armed=null;
+let mode="endless",tapUsed,tapsLeft,totalStars,chaining=false,shakeMag=0,actx=null,armed=null,continues=0;
 let coins=parseInt(localStorage.getItem("cb_coins")||"0");
 let sfxOn=localStorage.getItem("cb_sfx")!=="0", bgmOn=localStorage.getItem("cb_bgm")!=="0", vibOn=localStorage.getItem("cb_vib")!=="0";
 const COST={rainbow:100,cross:30};
@@ -158,7 +166,7 @@ function setCoins(v){ coins=v; localStorage.setItem("cb_coins",coins); $("coins"
 /* start */
 function start(m){ mode=m; initAudio(); if(actx&&actx.state==="suspended")actx.resume(); startBGM();
   bestKey=mode==="endless"?"cb_best_e":"cb_best_c"; best=parseInt(localStorage.getItem(bestKey)||"0"); $("best").textContent=best;
-  level=1; score=0; totalStars=0; armed=null; $("score").textContent=0; $("startScreen").classList.add("hide"); startLevel(); }
+  level=1; score=0; totalStars=0; armed=null; continues=0; $("score").textContent=0; $("startScreen").classList.add("hide"); startLevel(); }
 function applyTheme(lv){ wrap.style.background=THEMES[(lv-1)%THEMES.length]; }
 
 function spawnBubble(speed){
@@ -188,7 +196,7 @@ function aliveCount(){ return bubbles.filter(b=>b.alive).length; }
 function startLevel(){
   rectsize(); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove());
   bubbles=[];rings=[];obstacles=[];popped=0;chainN=0;resolving=false;playing=true;shakeMag=0;chaining=false;armed=null;refreshItems();
-  applyTheme(level); $("overlay").classList.remove("show");
+  applyTheme(level); $("overlay").classList.remove("show"); $("rescue").classList.remove("show");
   if(mode==="endless"){ const cf=levelConf(level);goal=cf.goal;tapUsed=false; for(let i=0;i<cf.count;i++)spawnBubble(cf.speed);
     setHUD("第 <b>"+level+"</b> 关 · 目标 <b>"+goal+"</b>","已炸 <b>0</b>"); }
   else { const c=clearConf(level);tapsLeft=c.budget;tapUsed=false; spawnObstacles(c.obs); for(let i=0;i<c.count;i++)spawnBubble(c.speed);
@@ -258,13 +266,31 @@ function tap(e){
 
 function postChain(){
   if(mode==="endless"){ resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform="";
-    if(popped>=goal){ celebrate("过关！🎉");level++;setTimeout(startLevel,1300); } else gameOver(); }
-  else { if(aliveCount()===0){ const used=clearConf(level).budget-(tapsLeft<0?0:tapsLeft); const usedTaps=clearConf(level).budget-tapsLeft;
+    if(popped>=goal){ celebrate("过关！🎉");level++;setTimeout(startLevel,1300); } else tryRescueOrEnd(); }
+  else { if(aliveCount()===0){ const usedTaps=clearConf(level).budget-tapsLeft;
       const stars=usedTaps<=2?3:(usedTaps<=3?2:1); totalStars+=stars; score+=Math.max(0,tapsLeft)*60*level; $("score").textContent=score;
       if(score>best){best=score;localStorage.setItem(bestKey,best);$("best").textContent=best;}
       resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform=""; celebrate("清屏！"+"⭐".repeat(stars));level++;setTimeout(startLevel,1400);
-    } else if(tapsLeft<=0){ resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform=""; gameOver(); }
+    } else if(tapsLeft<=0){ resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform=""; tryRescueOrEnd(); }
     else { $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球"; } }
+}
+
+/* 续命：差一点过不了关时，花币在原盘面再炸一次（价格每次翻倍） */
+function rescueCost(){ return 30*Math.pow(2,continues); }
+function tryRescueOrEnd(){ if(coins>=rescueCost()) offerRescue(); else gameOver(); }
+function offerRescue(){
+  const cost=rescueCost();
+  $("rescueMsg").innerHTML = mode==="endless" ? "还差 <b>"+(goal-popped)+"</b> 个就过关！" : "还剩 <b>"+aliveCount()+"</b> 个没清掉！";
+  const btn=$("rescueBtn"); btn.textContent="💥 再炸一次（"+cost+"🪙）"; btn.disabled=coins<cost;
+  $("rescue").classList.add("show");
+}
+function doRescue(){
+  const cost=rescueCost(); if(coins<cost)return;
+  setCoins(coins-cost); continues++;
+  $("rescue").classList.remove("show");
+  resolving=false; playing=true; chaining=false; tapUsed=false;
+  if(mode==="clear"){ tapsLeft+=2; clearHudL(); $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球"; }
+  lastT=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
 }
 
 function banner(txt){const b=$("banner");b.textContent=txt;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");}
@@ -333,6 +359,8 @@ wrap.addEventListener("pointerdown",e=>{e.preventDefault();tap(e);});
 $("modeEndless").onclick=()=>start("endless");
 $("modeClear").onclick=()=>start("clear");
 $("againBtn").onclick=()=>start(mode);
+$("rescueBtn").onclick=doRescue;
+$("giveupBtn").onclick=()=>{ $("rescue").classList.remove("show"); gameOver(); };
 $("menuBtn").onclick=()=>{ $("overlay").classList.remove("show"); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove()); $("startScreen").classList.remove("hide"); playing=false; armed=null; refreshItems(); setHUD("—","—"); };
 window.addEventListener("resize",()=>{if(playing)rectsize();});
 $("coins").textContent=coins; refreshToggles(); refreshItems();
