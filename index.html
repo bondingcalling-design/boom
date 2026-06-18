@@ -104,7 +104,7 @@
 
   <div class="items">
     <span class="coins">🪙 <span id="coins">0</span></span>
-    <button class="item" id="itemRainbow" data-item="rainbow" data-cost="50">🌈 彩虹炸 50</button>
+    <button class="item" id="itemRainbow" data-item="rainbow" data-cost="100">🌈 彩虹炸 100</button>
     <button class="item" id="itemCross" data-item="cross" data-cost="30">✛ 十字炸 30</button>
   </div>
 
@@ -128,7 +128,7 @@ let W,H,bubbles,rings,obstacles,level,score,best,bestKey,popped,goal,chainN,play
 let mode="endless",tapUsed,tapsLeft,totalStars,chaining=false,shakeMag=0,actx=null,armed=null;
 let coins=parseInt(localStorage.getItem("cb_coins")||"0");
 let sfxOn=localStorage.getItem("cb_sfx")!=="0", bgmOn=localStorage.getItem("cb_bgm")!=="0", vibOn=localStorage.getItem("cb_vib")!=="0";
-const COST={rainbow:50,cross:30};
+const COST={rainbow:100,cross:30};
 
 function rectsize(){const r=wrap.getBoundingClientRect();W=r.width;H=r.height;}
 
@@ -222,13 +222,15 @@ function popBubble(b){
   if(mode==="endless")$("hudR").innerHTML="已炸 <b>"+popped+"</b>"; else $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球";
   if(b.kind==="cross")crossBlast(b.x,b.y);
   else if(b.kind==="big")addRing(b.x,b.y,128);
-  else if(b.kind==="rainbow"){addRing(b.x,b.y);rainbowPop();}
+  else if(b.kind==="rainbow"){addRing(b.x,b.y);rainbowPop(b.x,b.y);}
   else if(b.kind==="plus"){addRing(b.x,b.y); if(mode==="clear"){tapsLeft++;clearHudL();banner("➕1 点击");}}
   else addRing(b.x,b.y);
 }
-function rainbowPop(){ const cnt={}; bubbles.forEach(b=>{if(b.alive)cnt[b.color]=(cnt[b.color]||0)+1;});
+function rainbowPop(x,y){ // 削弱：只炸触发点附近范围内的同色球（要瞄准，不再全场秒清）
+  const R=140;
+  const cnt={}; bubbles.forEach(b=>{ if(b.alive&&Math.hypot(b.x-x,b.y-y)<R)cnt[b.color]=(cnt[b.color]||0)+1; });
   let bestC=null,bn=0; for(const c in cnt)if(cnt[c]>bn){bn=cnt[c];bestC=c;}
-  if(bestC) bubbles.forEach(b=>{ if(b.alive&&b.color===bestC)popBubble(b); }); }
+  if(bestC) bubbles.forEach(b=>{ if(b.alive&&b.color===bestC&&Math.hypot(b.x-x,b.y-y)<R)popBubble(b); }); }
 function crossBlast(x,y){ addRing(x,y,72);beam(y,true);beam(x,false);shakeMag=Math.min(13,shakeMag+4);
   const band=33; bubbles.forEach(bb=>{ if(bb.alive&&(Math.abs(bb.y-y)<band||Math.abs(bb.x-x)<band))popBubble(bb); }); }
 function beam(p,h){ const d=document.createElement("div");d.className="beam";
@@ -246,7 +248,7 @@ function tap(e){
   const r=wrap.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
   buzz(20);chainN=0;tapUsed=true;chaining=true;
   if(mode==="clear"){tapsLeft--;clearHudL();}
-  if(armed==="rainbow"){ addRing(x,y); rainbowPop(); armed=null; refreshItems(); }
+  if(armed==="rainbow"){ addRing(x,y); rainbowPop(x,y); armed=null; refreshItems(); }
   else if(armed==="cross"){ crossBlast(x,y); armed=null; refreshItems(); }
   else addRing(x,y);
 }
