@@ -144,14 +144,23 @@ function rectsize(){const r=wrap.getBoundingClientRect();W=r.width;H=r.height;}
 function initAudio(){ if(actx)return; try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){actx=null;} }
 function playPop(d){ if(!actx||!sfxOn)return; const f=261.6*Math.pow(2,Math.min(d-1,28)/12);
   const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime; o.type="triangle";o.frequency.value=f;
-  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.22,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.34,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);
   o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+0.18); }
-let bgmGain=null,bgmTimer=null; const BGM=[261.63,293.66,329.63,392.0,440.0];
-function startBGM(){ if(!actx||!bgmOn||bgmTimer)return; if(!bgmGain){bgmGain=actx.createGain();bgmGain.gain.value=0.14;bgmGain.connect(actx.destination);}
-  const tick=()=>{ if(!bgmOn){bgmTimer=null;return;} const f=BGM[Math.floor(Math.random()*BGM.length)]*(Math.random()<0.5?1:0.5);
-    const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime; o.type="sine";o.frequency.value=f;
-    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.5,t+0.4);g.gain.exponentialRampToValueAtTime(0.0001,t+1.7);
-    o.connect(g);g.connect(bgmGain);o.start(t);o.stop(t+1.8); bgmTimer=setTimeout(tick,750+Math.random()*550); }; tick(); }
+// 背景音乐：和弦琶音循环 C–Am–F–G（真正的旋律，不再是随机音符）
+let bgmGain=null,bgmTimer=null,bgmIdx=0;
+const PROG=[[261.63,329.63,392.00],[220.00,261.63,329.63],[174.61,220.00,261.63],[196.00,246.94,293.66]];
+const ARP=[0,1,2,1,0,1,2,1];
+function bgmTone(freq,dur,type,vol){ const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;
+  o.type=type;o.frequency.value=freq; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.05); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g);g.connect(bgmGain);o.start(t);o.stop(t+dur+0.06); }
+function startBGM(){ if(!actx||!bgmOn||bgmTimer)return;
+  if(!bgmGain){bgmGain=actx.createGain();bgmGain.gain.value=0.9;bgmGain.connect(actx.destination);}
+  const stepFn=()=>{ if(!bgmOn){bgmTimer=null;return;}
+    const chord=PROG[Math.floor(bgmIdx/8)%PROG.length], w=bgmIdx%8;
+    bgmTone(chord[ARP[w]],0.55,"sine",0.14);
+    if(w===0) bgmTone(chord[0]/2,1.4,"triangle",0.12);
+    bgmIdx++; bgmTimer=setTimeout(stepFn,380); };
+  stepFn(); }
 function stopBGM(){ if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;} }
 function buzz(ms){ if(vibOn&&navigator.vibrate)navigator.vibrate(ms); }
 
@@ -311,7 +320,7 @@ function fanfare(){
   [0,4,7,12].forEach((semi,i)=>setTimeout(()=>{
     const f=392*Math.pow(2,semi/12), o=actx.createOscillator(), g=actx.createGain(), t=actx.currentTime;
     o.type="triangle"; o.frequency.value=f;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.3,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.42,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
     o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+0.32);
   }, i*95));
 }
