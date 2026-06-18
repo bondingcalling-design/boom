@@ -155,7 +155,7 @@ function buzz(ms){ if(vibOn && navigator.vibrate) navigator.vibrate(ms); }
 /* ---------- difficulty ---------- */
 function levelConf(lv){
   const count=Math.min(38, 14+lv*2);          // balls cap at 38 (no more screen-flooding)
-  const ratio=Math.min(0.80, 0.24+lv*0.05);   // 清除比例(已上调，补偿特殊球带来的难度下降)
+  const ratio=Math.min(0.85, 0.30+lv*0.055);  // 清除比例(再上调，整体调难)
   const goal=Math.max(2, Math.ceil(count*ratio));
   const speed=Math.min(2.4, 1+lv*0.06);        // balls move faster each level
   return {count,goal,speed};
@@ -178,7 +178,7 @@ function startLevel(){
   for(let i=0;i<cf.count;i++){
     const rnd=Math.random();
     let kind="normal";
-    if(rnd<0.06) kind="big"; else if(rnd<0.19) kind="cross";
+    if(rnd<0.04) kind="big"; else if(rnd<0.13) kind="cross";  // 特殊球出现率下调(减少白送)
     const r=(kind==="big"?17:11+Math.random()*5);
     const color=COLORS[Math.floor(Math.random()*COLORS.length)];
     const b={x:r+Math.random()*(W-2*r),y:r+Math.random()*(H-2*r),
@@ -286,6 +286,7 @@ function tap(e){
   const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
   const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
   tapUsed=true; chainN=0;
+  buzz(20);            // 点击瞬间直接振一下(在手势调用链里，安卓最可靠)
   addRing(x,y);
 }
 
