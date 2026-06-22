@@ -51,6 +51,12 @@
   .skinlist{display:flex;flex-direction:column;gap:8px;width:min(88%,320px);max-height:54%;overflow:auto;}
   .skinrow{display:flex;align-items:center;justify-content:space-between;background:#22263a;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;}
   .skinrow .btn{padding:7px 14px;font-size:12px;}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:center;justify-content:center;z-index:80;}
+  .modal.show{display:flex;}
+  .card{background:#1b1e2e;border-radius:18px;padding:24px 26px;text-align:center;display:flex;flex-direction:column;gap:12px;max-width:300px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+  .card h2{font-size:22px;}
+  .card .msg{font-size:14px;color:#cfd3f5;line-height:1.8;}
+  .card .msg b{color:var(--accent);font-size:18px;}
   .tip{margin-top:9px;font-size:11px;color:#7c82ad;text-align:center;line-height:1.7;}
   .start,.overlay{position:absolute;inset:0;background:rgba(9,10,18,.94);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px;text-align:center;z-index:30;}
   .overlay{display:none;}.overlay.show{display:flex;}.start.hide{display:none;}
@@ -137,6 +143,14 @@
   <div class="tip">瞄准球最密处点下去 ｜ <b style="color:#fff">✛</b>炸排+列 · <b style="color:#ffd24a">✸</b>巨爆 · <b style="color:#3ddc84">➕</b>加点击(清屏)</div>
   <input type="file" id="skinUpload" accept="image/*" style="display:none">
 
+  <div class="modal" id="signin">
+    <div class="card">
+      <h2>📅 每日签到</h2>
+      <div class="msg" id="signinMsg"></div>
+      <button class="btn" id="signinOk">领取</button>
+    </div>
+  </div>
+
 <script>
 const $=id=>document.getElementById(id);
 const COLORS=["#ff7eb6","#7afcff","#feff9c","#a3ff8c","#c79bff","#ff9b6b","#6ba8ff"];
@@ -153,6 +167,19 @@ const SK_FRUIT=["🍎","🍇","🍊","🍓","🍋","🫐","🍑","🍉"];
 const SK_MEME=["😂","🤡","💀","🤪","😵‍💫","🥵","👽","🤖","😎","🥶","😭","🫠"];
 let ownedSkins, selectedSkin;
 function loadSkins(){ try{ownedSkins=JSON.parse(localStorage.getItem("cb_skins")||'["classic"]');}catch(e){ownedSkins=["classic"];} selectedSkin=localStorage.getItem("cb_skin")||"classic"; }
+// 每日登录奖励：连续签到送币，断签重置
+function dayStr(off){ const d=new Date(Date.now()-(off||0)*86400000); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+function checkDailyLogin(){
+  const today=dayStr(0), last=localStorage.getItem("cb_lastlogin");
+  if(last===today) return;                       // 今天已签
+  let streak=parseInt(localStorage.getItem("cb_streak")||"0");
+  streak = (last===dayStr(1)) ? streak+1 : 1;    // 昨天来过=连续，否则重置
+  const reward = 30 + Math.min(streak,7)*10;
+  setCoins(coins+reward);
+  localStorage.setItem("cb_lastlogin",today); localStorage.setItem("cb_streak",String(streak));
+  $("signinMsg").innerHTML = "连续登录 <b>"+streak+"</b> 天<br>获得 <b>"+reward+"</b> 🪙<br><span style='font-size:12px;color:#8b90b8'>明天再来，连得越久送越多</span>";
+  $("signin").classList.add("show");
+}
 function saveSkins(){ localStorage.setItem("cb_skins",JSON.stringify(ownedSkins)); localStorage.setItem("cb_skin",selectedSkin); }
 function emojiSkin(el,color,r,set){ el.style.background=color; el.style.boxShadow="0 0 10px "+color; el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center"; el.textContent=set[Math.floor(Math.random()*set.length)]; el.style.fontSize=(r*1.05)+"px"; }
 function applySkin(el,color,r){
@@ -425,7 +452,8 @@ $("rescueBtn").onclick=doRescue;
 $("giveupBtn").onclick=()=>{ $("rescue").classList.remove("show"); gameOver(); };
 $("menuBtn").onclick=()=>{ $("overlay").classList.remove("show"); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove()); $("startScreen").classList.remove("hide"); playing=false; armed=null; refreshItems(); setHUD("—","—"); };
 window.addEventListener("resize",()=>{if(playing)rectsize();});
-loadSkins(); $("coins").textContent=coins; refreshToggles(); refreshItems();
+$("signinOk").onclick=()=>$("signin").classList.remove("show");
+loadSkins(); $("coins").textContent=coins; refreshToggles(); refreshItems(); checkDailyLogin();
 </script>
 </body>
 </html>
