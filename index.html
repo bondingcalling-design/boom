@@ -48,6 +48,9 @@
   .toggles{display:flex;gap:4px;}
   .tg{background:#22263a;border:none;border-radius:9px;font-size:16px;width:36px;height:36px;cursor:pointer;line-height:1;}
   .tg.off{opacity:.38;}
+  .skinlist{display:flex;flex-direction:column;gap:8px;width:min(88%,320px);max-height:54%;overflow:auto;}
+  .skinrow{display:flex;align-items:center;justify-content:space-between;background:#22263a;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:800;}
+  .skinrow .btn{padding:7px 14px;font-size:12px;}
   .tip{margin-top:9px;font-size:11px;color:#7c82ad;text-align:center;line-height:1.7;}
   .start,.overlay{position:absolute;inset:0;background:rgba(9,10,18,.94);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px;text-align:center;z-index:30;}
   .overlay{display:none;}.overlay.show{display:flex;}.start.hide{display:none;}
@@ -90,6 +93,14 @@
       <div class="sub">每关一次点击，炸够目标过关</div>
       <button class="btn ghost" id="modeClear">清屏模式</button>
       <div class="sub">有限次点击清空全场 · 用得越少 ⭐ 越多</div>
+      <button class="btn ghost" id="openSkins">🎨 皮肤</button>
+    </div>
+
+    <div class="overlay" id="skinPanel">
+      <h2>🎨 官方皮肤</h2>
+      <div class="sub">用金币解锁，让小球换个样子</div>
+      <div class="skinlist" id="skinList"></div>
+      <button class="btn ghost" id="skinClose">返回</button>
     </div>
 
     <div class="overlay" id="overlay">
@@ -135,6 +146,35 @@ let mode="endless",tapUsed,tapsLeft,totalStars,chaining=false,shakeMag=0,actx=nu
 let coins=parseInt(localStorage.getItem("cb_coins")||"0");
 let sfxOn=localStorage.getItem("cb_sfx")!=="0", bgmOn=localStorage.getItem("cb_bgm")!=="0", vibOn=localStorage.getItem("cb_vib")!=="0";
 const COST={cross:30};
+const SKINS=[{id:"classic",name:"经典 · 彩球",cost:0},{id:"neon",name:"霓虹 · 描边发光",cost:150},{id:"candy",name:"糖果 · 渐变",cost:300},{id:"animal",name:"动物乐园",cost:500},{id:"fruit",name:"水果派对",cost:500}];
+const SK_ANIMAL=["🐱","🐶","🐰","🐸","🐹","🐯","🐼","🦊"];
+const SK_FRUIT=["🍎","🍇","🍊","🍓","🍋","🫐","🍑","🍉"];
+let ownedSkins, selectedSkin;
+function loadSkins(){ try{ownedSkins=JSON.parse(localStorage.getItem("cb_skins")||'["classic"]');}catch(e){ownedSkins=["classic"];} selectedSkin=localStorage.getItem("cb_skin")||"classic"; }
+function saveSkins(){ localStorage.setItem("cb_skins",JSON.stringify(ownedSkins)); localStorage.setItem("cb_skin",selectedSkin); }
+function applySkin(el,color,r){
+  el.style.display="";el.style.alignItems="";el.style.justifyContent="";el.textContent="";el.style.border="";
+  switch(selectedSkin){
+    case "neon": el.style.background="#0e1018"; el.style.border="3px solid "+color; el.style.boxShadow="0 0 16px "+color+", inset 0 0 8px "+color; break;
+    case "candy": el.style.background="radial-gradient(circle at 35% 30%, #ffffff, "+color+" 78%)"; el.style.boxShadow="0 0 10px "+color; break;
+    case "animal": el.style.background=color; el.style.boxShadow="0 0 10px "+color; el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center"; el.textContent=SK_ANIMAL[Math.floor(Math.random()*SK_ANIMAL.length)]; el.style.fontSize=(r*1.05)+"px"; break;
+    case "fruit": el.style.background=color; el.style.boxShadow="0 0 10px "+color; el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center"; el.textContent=SK_FRUIT[Math.floor(Math.random()*SK_FRUIT.length)]; el.style.fontSize=(r*1.05)+"px"; break;
+    default: el.style.background=color; el.style.boxShadow="0 0 12px "+color;
+  }
+}
+function renderSkinList(){
+  const box=$("skinList"); box.innerHTML="";
+  SKINS.forEach(s=>{
+    const owned=ownedSkins.includes(s.id), sel=selectedSkin===s.id;
+    const row=document.createElement("div"); row.className="skinrow";
+    const lab=document.createElement("span"); lab.textContent=s.name;
+    const btn=document.createElement("button"); btn.className="btn ghost";
+    if(sel){ btn.textContent="使用中"; btn.disabled=true; }
+    else if(owned){ btn.textContent="使用"; btn.onclick=()=>{ selectedSkin=s.id; saveSkins(); renderSkinList(); }; }
+    else { btn.textContent="解锁 "+s.cost+"🪙"; btn.disabled=coins<s.cost; btn.onclick=()=>{ if(coins>=s.cost){ setCoins(coins-s.cost); ownedSkins.push(s.id); selectedSkin=s.id; saveSkins(); renderSkinList(); } }; }
+    row.appendChild(lab); row.appendChild(btn); box.appendChild(row);
+  });
+}
 
 function rectsize(){const r=wrap.getBoundingClientRect();W=r.width;H=r.height;}
 
@@ -192,10 +232,14 @@ function spawnBubble(speed){
   const color=COLORS[Math.floor(Math.random()*COLORS.length)];
   const b={x:r+Math.random()*(W-2*r),y:r+Math.random()*(H-2*r),vx:(Math.random()-.5)*1.3*speed,vy:(Math.random()-.5)*1.3*speed,r,color,kind,alive:true,el:null};
   const el=document.createElement("div");el.className="bub"+(kind!=="normal"?" sp":"");
-  el.style.width=el.style.height=(r*2)+"px";el.style.background=color;el.style.boxShadow="0 0 12px "+color;
-  if(kind==="cross"){el.textContent="✛";el.style.fontSize=(r*1.25)+"px";el.style.boxShadow="0 0 16px #fff";}
-  else if(kind==="big"){el.textContent="✸";el.style.fontSize=(r*1.05)+"px";el.style.background="#ffcf5c";el.style.boxShadow="0 0 22px #ffd24a";}
-  else if(kind==="plus"){el.textContent="➕";el.style.fontSize=(r*1.2)+"px";el.style.background="#3ddc84";el.style.boxShadow="0 0 16px #3ddc84";}
+  el.style.width=el.style.height=(r*2)+"px";
+  if(kind==="normal"){ applySkin(el,color,r); }
+  else {
+    el.style.background=color;el.style.boxShadow="0 0 12px "+color;
+    if(kind==="cross"){el.textContent="✛";el.style.fontSize=(r*1.25)+"px";el.style.boxShadow="0 0 16px #fff";}
+    else if(kind==="big"){el.textContent="✸";el.style.fontSize=(r*1.05)+"px";el.style.background="#ffcf5c";el.style.boxShadow="0 0 22px #ffd24a";}
+    else if(kind==="plus"){el.textContent="➕";el.style.fontSize=(r*1.2)+"px";el.style.background="#3ddc84";el.style.boxShadow="0 0 16px #3ddc84";}
+  }
   wrap.appendChild(el);b.el=el;bubbles.push(b);
 }
 function spawnObstacles(n){ for(let i=0;i<n;i++){ const r=16+Math.random()*6; const o={x:r+Math.random()*(W-2*r),y:r+Math.random()*(H-2*r),r};
@@ -206,7 +250,7 @@ function aliveCount(){ return bubbles.filter(b=>b.alive).length; }
 function startLevel(){
   rectsize(); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove());
   bubbles=[];rings=[];obstacles=[];popped=0;chainN=0;resolving=false;playing=true;shakeMag=0;chaining=false;armed=null;refreshItems();
-  applyTheme(level); $("overlay").classList.remove("show"); $("rescue").classList.remove("show");
+  applyTheme(level); $("overlay").classList.remove("show"); $("rescue").classList.remove("show"); $("skinPanel").classList.remove("show");
   if(mode==="endless"){ const cf=levelConf(level);goal=cf.goal;tapUsed=false; for(let i=0;i<cf.count;i++)spawnBubble(cf.speed);
     setHUD("第 <b>"+level+"</b> 关 · 目标 <b>"+goal+"</b>","已炸 <b>0</b>"); }
   else { const c=clearConf(level);tapsLeft=c.budget;tapUsed=false; spawnObstacles(c.obs); for(let i=0;i<c.count;i++)spawnBubble(c.speed);
@@ -357,12 +401,14 @@ $("vib").onclick=()=>{vibOn=!vibOn;localStorage.setItem("cb_vib",vibOn?"1":"0");
 wrap.addEventListener("pointerdown",e=>{e.preventDefault();tap(e);});
 $("modeEndless").onclick=()=>start("endless");
 $("modeClear").onclick=()=>start("clear");
+$("openSkins").onclick=()=>{ renderSkinList(); $("startScreen").classList.add("hide"); $("skinPanel").classList.add("show"); };
+$("skinClose").onclick=()=>{ $("skinPanel").classList.remove("show"); $("startScreen").classList.remove("hide"); };
 $("againBtn").onclick=()=>start(mode);
 $("rescueBtn").onclick=doRescue;
 $("giveupBtn").onclick=()=>{ $("rescue").classList.remove("show"); gameOver(); };
 $("menuBtn").onclick=()=>{ $("overlay").classList.remove("show"); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove()); $("startScreen").classList.remove("hide"); playing=false; armed=null; refreshItems(); setHUD("—","—"); };
 window.addEventListener("resize",()=>{if(playing)rectsize();});
-$("coins").textContent=coins; refreshToggles(); refreshItems();
+loadSkins(); $("coins").textContent=coins; refreshToggles(); refreshItems();
 </script>
 </body>
 </html>
