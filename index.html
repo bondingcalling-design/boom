@@ -135,6 +135,7 @@
   </div>
 
   <div class="tip">瞄准球最密处点下去 ｜ <b style="color:#fff">✛</b>炸排+列 · <b style="color:#ffd24a">✸</b>巨爆 · <b style="color:#3ddc84">➕</b>加点击(清屏)</div>
+  <input type="file" id="skinUpload" accept="image/*" style="display:none">
 
 <script>
 const $=id=>document.getElementById(id);
@@ -146,30 +147,35 @@ let mode="endless",tapUsed,tapsLeft,totalStars,chaining=false,shakeMag=0,actx=nu
 let coins=parseInt(localStorage.getItem("cb_coins")||"0");
 let sfxOn=localStorage.getItem("cb_sfx")!=="0", bgmOn=localStorage.getItem("cb_bgm")!=="0", vibOn=localStorage.getItem("cb_vib")!=="0";
 const COST={cross:30};
-const SKINS=[{id:"classic",name:"经典 · 彩球",cost:0},{id:"neon",name:"霓虹 · 描边发光",cost:150},{id:"candy",name:"糖果 · 渐变",cost:300},{id:"animal",name:"动物乐园",cost:500},{id:"fruit",name:"水果派对",cost:500}];
+const SKINS=[{id:"classic",name:"经典 · 彩球",cost:0},{id:"neon",name:"霓虹 · 描边发光",cost:150},{id:"candy",name:"糖果 · 渐变",cost:300},{id:"animal",name:"动物乐园",cost:500},{id:"fruit",name:"水果派对",cost:500},{id:"meme",name:"沙雕表情包",cost:400},{id:"custom",name:"自定义 · 上传图片",cost:0}];
 const SK_ANIMAL=["🐱","🐶","🐰","🐸","🐹","🐯","🐼","🦊"];
 const SK_FRUIT=["🍎","🍇","🍊","🍓","🍋","🫐","🍑","🍉"];
+const SK_MEME=["😂","🤡","💀","🤪","😵‍💫","🥵","👽","🤖","😎","🥶","😭","🫠"];
 let ownedSkins, selectedSkin;
 function loadSkins(){ try{ownedSkins=JSON.parse(localStorage.getItem("cb_skins")||'["classic"]');}catch(e){ownedSkins=["classic"];} selectedSkin=localStorage.getItem("cb_skin")||"classic"; }
 function saveSkins(){ localStorage.setItem("cb_skins",JSON.stringify(ownedSkins)); localStorage.setItem("cb_skin",selectedSkin); }
+function emojiSkin(el,color,r,set){ el.style.background=color; el.style.boxShadow="0 0 10px "+color; el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center"; el.textContent=set[Math.floor(Math.random()*set.length)]; el.style.fontSize=(r*1.05)+"px"; }
 function applySkin(el,color,r){
-  el.style.display="";el.style.alignItems="";el.style.justifyContent="";el.textContent="";el.style.border="";
+  el.style.display="";el.style.alignItems="";el.style.justifyContent="";el.textContent="";el.style.border="";el.style.backgroundImage="";
   switch(selectedSkin){
     case "neon": el.style.background="#0e1018"; el.style.border="3px solid "+color; el.style.boxShadow="0 0 16px "+color+", inset 0 0 8px "+color; break;
     case "candy": el.style.background="radial-gradient(circle at 35% 30%, #ffffff, "+color+" 78%)"; el.style.boxShadow="0 0 10px "+color; break;
-    case "animal": el.style.background=color; el.style.boxShadow="0 0 10px "+color; el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center"; el.textContent=SK_ANIMAL[Math.floor(Math.random()*SK_ANIMAL.length)]; el.style.fontSize=(r*1.05)+"px"; break;
-    case "fruit": el.style.background=color; el.style.boxShadow="0 0 10px "+color; el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center"; el.textContent=SK_FRUIT[Math.floor(Math.random()*SK_FRUIT.length)]; el.style.fontSize=(r*1.05)+"px"; break;
+    case "animal": emojiSkin(el,color,r,SK_ANIMAL); break;
+    case "fruit": emojiSkin(el,color,r,SK_FRUIT); break;
+    case "meme": emojiSkin(el,color,r,SK_MEME); break;
+    case "custom": { const img=localStorage.getItem("cb_customimg"); if(img){ el.style.background="#222"; el.style.backgroundImage="url("+img+")"; el.style.backgroundSize="cover"; el.style.backgroundPosition="center"; el.style.boxShadow="0 0 10px rgba(255,255,255,.45)"; } else { el.style.background=color; el.style.boxShadow="0 0 12px "+color; } break; }
     default: el.style.background=color; el.style.boxShadow="0 0 12px "+color;
   }
 }
 function renderSkinList(){
   const box=$("skinList"); box.innerHTML="";
   SKINS.forEach(s=>{
-    const owned=ownedSkins.includes(s.id), sel=selectedSkin===s.id;
+    const owned=s.cost===0||ownedSkins.includes(s.id), sel=selectedSkin===s.id;
     const row=document.createElement("div"); row.className="skinrow";
     const lab=document.createElement("span"); lab.textContent=s.name;
     const btn=document.createElement("button"); btn.className="btn ghost";
-    if(sel){ btn.textContent="使用中"; btn.disabled=true; }
+    if(s.id==="custom"){ btn.textContent=(sel?"使用中 · 换图":"上传图片并使用"); btn.onclick=()=>$("skinUpload").click(); }
+    else if(sel){ btn.textContent="使用中"; btn.disabled=true; }
     else if(owned){ btn.textContent="使用"; btn.onclick=()=>{ selectedSkin=s.id; saveSkins(); renderSkinList(); }; }
     else { btn.textContent="解锁 "+s.cost+"🪙"; btn.disabled=coins<s.cost; btn.onclick=()=>{ if(coins>=s.cost){ setCoins(coins-s.cost); ownedSkins.push(s.id); selectedSkin=s.id; saveSkins(); renderSkinList(); } }; }
     row.appendChild(lab); row.appendChild(btn); box.appendChild(row);
@@ -403,6 +409,17 @@ $("modeEndless").onclick=()=>start("endless");
 $("modeClear").onclick=()=>start("clear");
 $("openSkins").onclick=()=>{ renderSkinList(); $("startScreen").classList.add("hide"); $("skinPanel").classList.add("show"); };
 $("skinClose").onclick=()=>{ $("skinPanel").classList.remove("show"); $("startScreen").classList.remove("hide"); };
+$("skinUpload").onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ const img=new Image(); img.onload=()=>{
+    const sz=128, c=document.createElement("canvas"); c.width=c.height=sz; const ctx=c.getContext("2d");
+    const s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
+    ctx.drawImage(img,sx,sy,s,s,0,0,sz,sz);
+    const data=c.toDataURL("image/jpeg",0.82);
+    try{ localStorage.setItem("cb_customimg",data); if(!ownedSkins.includes("custom"))ownedSkins.push("custom"); selectedSkin="custom"; saveSkins(); renderSkinList(); }
+    catch(err){ alert("图片存不下，换张更小的试试"); }
+  }; img.onerror=()=>alert("图片读取失败"); img.src=ev.target.result; };
+  reader.readAsDataURL(f); e.target.value=""; };
 $("againBtn").onclick=()=>start(mode);
 $("rescueBtn").onclick=doRescue;
 $("giveupBtn").onclick=()=>{ $("rescue").classList.remove("show"); gameOver(); };
