@@ -88,6 +88,10 @@
   .card{background:var(--card);border-radius:20px;padding:26px;text-align:center;display:flex;flex-direction:column;gap:13px;max-width:290px;box-shadow:0 14px 40px rgba(90,70,40,.3);}
   .card .msg{font-size:14px;color:var(--soft);line-height:1.9;}
   .card .msg b{color:var(--accentDk);font-size:18px;}
+  #achToast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-22px);background:var(--sage);color:#fff;font-size:13px;font-weight:800;padding:10px 18px;border-radius:14px;box-shadow:0 6px 18px rgba(120,90,40,.3);opacity:0;transition:.3s;pointer-events:none;z-index:90;white-space:nowrap;}
+  #achToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .achrow{align-items:center;}
+  .achrow .desc{font-size:11px;color:var(--soft);font-weight:600;}
 </style>
 </head>
 <body>
@@ -119,6 +123,7 @@
       <button class="btn ghost" id="modeDaily">每日挑战</button>
       <div class="sub" id="dailyInfo">每天一套固定关卡，和朋友比高分</div>
       <button class="btn ghost" id="openSkins">外观皮肤</button>
+      <button class="btn ghost" id="openAch">成就</button>
     </div>
 
     <div class="overlay" id="overlay">
@@ -144,6 +149,13 @@
       <div class="skinlist" id="skinList"></div>
       <button class="btn ghost" id="skinClose">返回</button>
     </div>
+
+    <div class="overlay" id="achPanel">
+      <h2>成就</h2>
+      <div class="sub">达成解锁，领取金币奖励</div>
+      <div class="skinlist" id="achList"></div>
+      <button class="btn ghost" id="achClose">返回</button>
+    </div>
   </div>
 
   <div class="items">
@@ -160,6 +172,8 @@
   <div class="tip">瞄准小球最密的地方点下去，连锁越长分越高</div>
 
   <input type="file" id="skinUpload" accept="image/*" style="display:none">
+
+  <div id="achToast"></div>
 
   <div class="modal" id="signin">
     <div class="card">
@@ -186,7 +200,35 @@ let mode="endless",tapUsed,tapsLeft,totalStars,chaining=false,shakeMag=0,actx=nu
 let coins=parseInt(localStorage.getItem("cb_coins")||"0");
 let sfxOn=localStorage.getItem("cb_sfx")!=="0", bgmOn=localStorage.getItem("cb_bgm")!=="0", vibOn=localStorage.getItem("cb_vib")!=="0";
 let ownedSkins, selectedSkin;
+let stats, achDone, rescuedRun=false;
 const COST={cross:30};
+const ACH=[
+  {id:"first",name:"初次过关",desc:"通过第一关",coin:30,ok:s=>s.maxlevel>=1},
+  {id:"c10",name:"连锁达人",desc:"单次连锁炸到 10 个",coin:50,ok:s=>s.maxchain>=10},
+  {id:"c20",name:"连锁大师",desc:"单次连锁炸到 20 个",coin:100,ok:s=>s.maxchain>=20},
+  {id:"lv10",name:"闯关高手",desc:"闯关或每日到第 10 关",coin:80,ok:s=>s.maxlevel>=10},
+  {id:"clr3",name:"完美清屏",desc:"清屏模式拿到 3 星",coin:80,ok:s=>s.clear3>=1},
+  {id:"pop1k",name:"爆破狂人",desc:"累计炸掉 1000 个球",coin:100,ok:s=>s.pop>=1000},
+  {id:"streak7",name:"七日不断",desc:"连续登录 7 天",coin:100,ok:s=>s.streak7>=1},
+  {id:"skin",name:"爱打扮",desc:"解锁一款皮肤",coin:30,ok:s=>s.skin>=1},
+  {id:"rescue",name:"起死回生",desc:"用续命过一关",coin:30,ok:s=>s.rescue>=1},
+  {id:"daily",name:"每日一爆",desc:"完成一次每日挑战",coin:30,ok:s=>s.dailydone>=1}
+];
+function loadStats(){ try{stats=JSON.parse(localStorage.getItem("cb_stats")||"{}");}catch(e){stats={};}
+  ["pop","maxchain","maxlevel","clear3","streak7","skin","rescue","dailydone"].forEach(k=>{if(stats[k]==null)stats[k]=0;}); }
+function saveStats(){ localStorage.setItem("cb_stats",JSON.stringify(stats)); }
+function loadAch(){ try{achDone=JSON.parse(localStorage.getItem("cb_ach")||"[]");}catch(e){achDone=[];} }
+let achQueue=[];
+function achToast(a){ achQueue.push(a); if(achQueue.length===1) showAchToast(); }
+function showAchToast(){ const a=achQueue[0]; if(!a)return; const t=$("achToast"); t.textContent="成就达成 · "+a.name+"　+"+a.coin+"金"; t.classList.add("show");
+  setTimeout(()=>{ t.classList.remove("show"); achQueue.shift(); if(achQueue.length)setTimeout(showAchToast,260); },1900); }
+function checkAchievements(){ ACH.forEach(a=>{ if(!achDone.includes(a.id)&&a.ok(stats)){ achDone.push(a.id); localStorage.setItem("cb_ach",JSON.stringify(achDone)); setCoins(coins+a.coin); achToast(a); } }); }
+function renderAchList(){ const box=$("achList"); box.innerHTML="";
+  ACH.forEach(a=>{ const done=achDone.includes(a.id); const row=document.createElement("div"); row.className="skinrow achrow";
+    const left=document.createElement("span"); left.innerHTML=a.name+"<br><span class='desc'>"+a.desc+"</span>";
+    const right=document.createElement("span"); right.style.fontWeight="800"; right.style.fontSize="12px";
+    if(done){right.textContent="已达成";right.style.color="var(--sageDk)";} else {right.textContent="+"+a.coin+"金";right.style.color="var(--soft)";}
+    row.appendChild(left); row.appendChild(right); box.appendChild(row); }); }
 
 function rectsize(){const r=wrap.getBoundingClientRect();W=r.width;H=r.height;}
 
@@ -240,7 +282,7 @@ function renderSkinList(){
     if(s.id==="custom"){ btn.textContent=(sel?"使用中 · 换图":"上传图片并使用"); btn.onclick=()=>$("skinUpload").click(); }
     else if(sel){ btn.textContent="使用中"; btn.disabled=true; }
     else if(owned){ btn.textContent="使用"; btn.onclick=()=>{ selectedSkin=s.id; saveSkins(); renderSkinList(); }; }
-    else { btn.textContent="解锁 "+s.cost+"金"; btn.disabled=coins<s.cost; btn.onclick=()=>{ if(coins>=s.cost){ setCoins(coins-s.cost); ownedSkins.push(s.id); selectedSkin=s.id; saveSkins(); renderSkinList(); } }; }
+    else { btn.textContent="解锁 "+s.cost+"金"; btn.disabled=coins<s.cost; btn.onclick=()=>{ if(coins>=s.cost){ setCoins(coins-s.cost); ownedSkins.push(s.id); selectedSkin=s.id; saveSkins(); stats.skin=1; saveStats(); checkAchievements(); renderSkinList(); } }; }
     row.appendChild(lab); row.appendChild(btn); box.appendChild(row);
   });
 }
@@ -255,6 +297,7 @@ function checkDailyLogin(){
   const reward = 30 + Math.min(streak,7)*10;
   setCoins(coins+reward);
   localStorage.setItem("cb_lastlogin",today); localStorage.setItem("cb_streak",String(streak));
+  if(streak>=7)stats.streak7=1; saveStats(); checkAchievements();
   $("signinMsg").innerHTML = "连续登录 <b>"+streak+"</b> 天<br>获得 <b>"+reward+"</b> 金币<br><span style='font-size:12px;color:#9b8f7c'>明天再来，连得越久送越多</span>";
   $("signin").classList.add("show");
 }
@@ -273,7 +316,7 @@ function start(m){ mode=m; initAudio(); if(actx&&actx.state==="suspended")actx.r
   if(m==="daily"){ rng=mulberry32(dailySeed()); const today=dayStr(0); if(localStorage.getItem("cb_daily_date")!==today){localStorage.setItem("cb_daily_date",today);localStorage.setItem("cb_daily_best","0");} bestKey="cb_daily_best"; }
   else { rng=Math.random; bestKey=(m==="endless"?"cb_best_e":"cb_best_c"); }
   best=parseInt(localStorage.getItem(bestKey)||"0"); $("best").textContent=best;
-  level=1; score=0; totalStars=0; armed=null; continues=0; $("score").textContent=0; $("startScreen").classList.add("hide"); startLevel(); }
+  level=1; score=0; totalStars=0; armed=null; continues=0; rescuedRun=false; $("score").textContent=0; $("startScreen").classList.add("hide"); startLevel(); }
 function applyTheme(lv){ wrap.style.background=THEMES[(lv-1)%THEMES.length]; }
 
 function spawnBubble(speed){
@@ -305,7 +348,7 @@ function aliveCount(){ return bubbles.filter(b=>b.alive).length; }
 function startLevel(){
   rectsize(); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove());
   bubbles=[];rings=[];obstacles=[];popped=0;chainN=0;resolving=false;playing=true;shakeMag=0;chaining=false;armed=null;refreshItems();
-  applyTheme(level); $("overlay").classList.remove("show"); $("rescue").classList.remove("show"); $("skinPanel").classList.remove("show");
+  applyTheme(level); $("overlay").classList.remove("show"); $("rescue").classList.remove("show"); $("skinPanel").classList.remove("show"); $("achPanel").classList.remove("show");
   if(mode!=="clear"){ const cf=levelConf(level);goal=cf.goal;tapUsed=false; for(let i=0;i<cf.count;i++)spawnBubble(cf.speed);
     setHUD((mode==="daily"?"每日 · ":"")+"第 <b>"+level+"</b> 关 · 目标 <b>"+goal+"</b>","已炸 <b>0</b>"); }
   else { const c=clearConf(level);tapsLeft=c.budget;tapUsed=false; spawnObstacles(c.obs); for(let i=0;i<c.count;i++)spawnBubble(c.speed);
@@ -333,6 +376,7 @@ function loop(t){
 
 function popBubble(b){
   b.alive=false;chainN++;popped++;score+=chainN; $("score").textContent=score;
+  stats.pop++; if(chainN>stats.maxchain)stats.maxchain=chainN;
   if(score>best){best=score;localStorage.setItem(bestKey,best);$("best").textContent=best;}
   b.el.classList.add("pop");playPop(chainN);buzz(10);particles(b.x,b.y,b.color);
   shakeMag=Math.min(11,shakeMag+1.6+chainN*0.18);showCombo();
@@ -364,11 +408,14 @@ function tap(e){
 }
 
 function postChain(){
+  saveStats(); checkAchievements();   // 连锁/累计炸球 成就即时判定
   if(mode!=="clear"){ resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform="";
-    if(popped>=goal){ celebrate("过关啦！");level++;setTimeout(startLevel,1300); } else tryRescueOrEnd(); }
+    if(popped>=goal){ if(level>stats.maxlevel)stats.maxlevel=level; if(mode==="daily")stats.dailydone=1; if(rescuedRun){stats.rescue=1;rescuedRun=false;} saveStats(); checkAchievements();
+      celebrate("过关啦！");level++;setTimeout(startLevel,1300); } else tryRescueOrEnd(); }
   else { if(aliveCount()===0){ const usedTaps=clearConf(level).budget-tapsLeft;
       const stars=usedTaps<=2?3:(usedTaps<=3?2:1); totalStars+=stars; score+=Math.max(0,tapsLeft)*60*level; $("score").textContent=score;
       if(score>best){best=score;localStorage.setItem(bestKey,best);$("best").textContent=best;}
+      if(stars===3)stats.clear3=1; if(level>stats.maxlevel)stats.maxlevel=level; if(rescuedRun){stats.rescue=1;rescuedRun=false;} saveStats(); checkAchievements();
       resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform=""; celebrate("清屏！ "+"★".repeat(stars));level++;setTimeout(startLevel,1400);
     } else if(tapsLeft<=0){ resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform=""; tryRescueOrEnd(); }
     else { $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球"; } }
@@ -384,7 +431,7 @@ function offerRescue(){
 }
 function doRescue(){
   const cost=rescueCost(); if(coins<cost)return;
-  setCoins(coins-cost); continues++;
+  setCoins(coins-cost); continues++; rescuedRun=true;
   $("rescue").classList.remove("show");
   resolving=false; playing=true; chaining=false; tapUsed=false;
   if(mode==="clear"){ tapsLeft+=2; clearHudL(); $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球"; }
@@ -436,6 +483,8 @@ $("modeClear").onclick=()=>start("clear");
 $("modeDaily").onclick=()=>start("daily");
 $("openSkins").onclick=()=>{ renderSkinList(); $("startScreen").classList.add("hide"); $("skinPanel").classList.add("show"); };
 $("skinClose").onclick=()=>{ $("skinPanel").classList.remove("show"); $("startScreen").classList.remove("hide"); };
+$("openAch").onclick=()=>{ renderAchList(); $("startScreen").classList.add("hide"); $("achPanel").classList.add("show"); };
+$("achClose").onclick=()=>{ $("achPanel").classList.remove("show"); $("startScreen").classList.remove("hide"); };
 $("skinUpload").onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return;
   const reader=new FileReader();
   reader.onload=ev=>{ const img=new Image(); img.onload=()=>{
@@ -453,7 +502,7 @@ $("giveupBtn").onclick=()=>{ $("rescue").classList.remove("show"); gameOver(); }
 $("menuBtn").onclick=()=>{ $("overlay").classList.remove("show"); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove()); $("startScreen").classList.remove("hide"); playing=false; armed=null; refreshItems(); setHUD("—","—"); updateDailyInfo(); };
 $("signinOk").onclick=()=>$("signin").classList.remove("show");
 window.addEventListener("resize",()=>{if(playing)rectsize();});
-loadSkins(); $("coins").textContent=coins; refreshToggles(); refreshItems(); updateDailyInfo(); checkDailyLogin();
+loadStats(); loadAch(); loadSkins(); $("coins").textContent=coins; refreshToggles(); refreshItems(); updateDailyInfo(); checkAchievements(); checkDailyLogin();
 </script>
 </body>
 </html>
