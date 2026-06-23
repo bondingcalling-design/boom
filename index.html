@@ -3,506 +3,294 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>一触连爆</title>
+<title>再吹一点点</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  :root{
-    --bg1:#f8f3ea; --bg2:#efe5d4; --ink:#5d5346; --soft:#9b8f7c;
-    --card:#fffdf8; --shadow:rgba(150,128,96,.16);
-    --accent:#cf9277; --accentDk:#b97a5e;   /* 陶土橙 */
-    --sage:#9bb072; --sageDk:#85994f;        /* 鼠尾草绿 */
-    --gold:#dcab4d;                          /* 燕麦金 */
-  }
+  :root{ --bg1:#f8f3ea; --bg2:#efe5d4; --ink:#5d5346; --soft:#9b8f7c; --card:#fffdf8; --shadow:rgba(150,128,96,.16);
+    --accent:#cf9277; --accentDk:#b97a5e; --sage:#9bb072; --sageDk:#85994f; --gold:#dcab4d; --warn:#d9694e; }
   html,body{height:100%;overscroll-behavior:none;}
   body{background:linear-gradient(165deg,var(--bg1),var(--bg2));color:var(--ink);
     font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
     display:flex;flex-direction:column;align-items:center;padding:14px 12px 22px;min-height:100%;user-select:none;overflow:hidden;touch-action:none;}
   .top{width:100%;max-width:420px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-  .title{font-size:19px;font-weight:800;letter-spacing:3px;color:var(--ink);}
+  .title{font-size:19px;font-weight:800;letter-spacing:3px;}
   .title small{display:block;font-size:9px;color:var(--soft);letter-spacing:2px;margin-top:3px;font-weight:600;}
   .stat{display:flex;gap:8px;}
   .box{background:var(--card);border-radius:14px;padding:6px 13px;text-align:center;min-width:60px;box-shadow:0 3px 10px var(--shadow);}
   .box .l{font-size:9px;color:var(--soft);letter-spacing:1px;}
-  .box .v{font-size:17px;font-weight:800;line-height:1.15;color:var(--ink);}
-  .order{width:100%;max-width:420px;display:flex;align-items:center;justify-content:space-between;
-    background:var(--card);border-radius:14px;padding:9px 15px;margin:5px 0 8px;font-size:13px;font-weight:700;color:var(--soft);box-shadow:0 3px 10px var(--shadow);}
-  .order b{color:var(--accentDk);} .order .prog b{color:var(--sageDk);}
-  .wrap{position:relative;width:min(94vw,420px);flex:1;min-height:380px;
-    background:linear-gradient(160deg,#fbf4e6,#f3e7d2);border-radius:24px;overflow:hidden;
-    box-shadow:0 8px 24px var(--shadow), inset 0 0 0 1px rgba(255,255,255,.5);transition:background .5s;}
-  .bub{position:absolute;border-radius:50%;will-change:left,top,transform;border:1px solid rgba(120,90,60,.07);}
-  .bub.pop{animation:pp .3s ease forwards;}
-  @keyframes pp{0%{transform:scale(1);}45%{transform:scale(1.55);}100%{transform:scale(0);opacity:0;}}
-  .bub.big-ball{animation:bigpulse 1.1s ease-in-out infinite;}
-  @keyframes bigpulse{0%,100%{box-shadow:0 0 8px var(--gold);}50%{box-shadow:0 0 18px var(--gold),0 0 28px rgba(220,171,77,.7);}}
-  .m-cross{display:block;background:
-      linear-gradient(#fff,#fff) center/100% 30% no-repeat,
-      linear-gradient(#fff,#fff) center/30% 100% no-repeat;
-      filter:drop-shadow(0 1px 1px rgba(120,80,40,.25));}
-  .obs{position:absolute;border-radius:30%;background:linear-gradient(160deg,#cdbfa6,#b6a684);
-    box-shadow:inset 0 -3px 6px rgba(90,70,40,.3), 0 2px 5px var(--shadow);}
-  .ring{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;
-    border:2px solid rgba(255,255,255,.95);
-    background:radial-gradient(circle,rgba(255,255,255,.22) 0%,rgba(255,255,255,.06) 60%,transparent 72%);
-    box-shadow:0 0 22px rgba(207,146,119,.55);}
-  .part{position:absolute;border-radius:50%;pointer-events:none;will-change:transform,opacity;transition:transform .5s ease-out,opacity .5s ease-out;}
-  .beam{position:absolute;background:rgba(255,255,255,.92);box-shadow:0 0 18px #fff,0 0 34px rgba(207,146,119,.6);pointer-events:none;z-index:4;animation:beamf .42s ease-out forwards;}
-  @keyframes beamf{0%{opacity:.95;}100%{opacity:0;}}
-  .combo{position:absolute;top:28%;left:0;right:0;text-align:center;pointer-events:none;z-index:18;font-weight:800;color:var(--accentDk);text-shadow:0 2px 10px rgba(255,255,255,.8);opacity:0;}
-  .combo.show{opacity:1;}
-  .items{width:100%;max-width:420px;display:flex;align-items:center;gap:10px;margin-top:11px;}
-  .coins{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:800;color:var(--accentDk);white-space:nowrap;}
-  .coin-ico{width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fbe6a8,var(--gold));box-shadow:inset 0 0 0 1.5px #c79433;}
-  .item{flex:1;background:var(--card);border:2px solid transparent;border-radius:13px;color:var(--ink);font-size:13px;font-weight:700;padding:10px 8px;cursor:pointer;box-shadow:0 3px 10px var(--shadow);}
-  .item.armed{border-color:var(--sage);box-shadow:0 0 10px rgba(155,176,114,.55);}
-  .item.poor{opacity:.5;}
-  .controls{margin-top:11px;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;max-width:420px;}
-  .btn{background:var(--accent);color:#fff;border:none;border-radius:16px;padding:12px 22px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 var(--accentDk);transition:transform .06s,box-shadow .06s;}
+  .box .v{font-size:17px;font-weight:800;line-height:1.15;}
+  .bar{width:100%;max-width:420px;display:flex;align-items:center;justify-content:space-between;margin:4px 2px 6px;}
+  .lives{display:flex;gap:5px;}
+  .life{width:13px;height:16px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:var(--sage);box-shadow:inset 0 -2px 3px rgba(0,0,0,.15);}
+  .life.gone{background:#e0d6c4;}
+  .streak{font-size:14px;font-weight:800;color:var(--accentDk);min-height:18px;}
+  .shield{font-size:12px;font-weight:700;color:var(--sageDk);}
+  .wrap{position:relative;width:min(94vw,420px);flex:1;min-height:380px;background:linear-gradient(160deg,#fbf4e6,#f3e7d2);
+    border-radius:24px;overflow:hidden;box-shadow:0 8px 24px var(--shadow), inset 0 0 0 1px rgba(255,255,255,.5);
+    display:flex;align-items:center;justify-content:center;}
+  .roundNum{position:absolute;top:13%;width:100%;text-align:center;font-size:38px;font-weight:800;color:var(--ink);text-shadow:0 2px 10px rgba(255,255,255,.7);}
+  .balloonBox{position:relative;display:flex;flex-direction:column;align-items:center;will-change:transform;}
+  .balloon{width:96px;height:112px;border-radius:50% 50% 50% 50%/55% 55% 45% 45%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.85), #9bb072 72%);transition:background .06s;}
+  .knot{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #9bb072;margin-top:-2px;}
+  .string{width:1.5px;height:36px;background:rgba(120,100,70,.4);}
+  .hint{position:absolute;bottom:9%;width:100%;text-align:center;font-size:14px;color:var(--soft);line-height:1.7;padding:0 18px;}
+  .danger{position:absolute;top:5%;width:100%;text-align:center;font-size:16px;font-weight:800;color:var(--warn);opacity:0;}
+  .danger.show{opacity:1;animation:blink .3s infinite alternate;}
+  @keyframes blink{from{opacity:.4;}to{opacity:1;}}
+  .flash{position:absolute;inset:0;background:var(--warn);opacity:0;pointer-events:none;}
+  .flash.go{animation:fl .35s ease;}
+  @keyframes fl{0%{opacity:.5;}100%{opacity:0;}}
+  .fly{position:absolute;top:30%;width:100%;text-align:center;font-size:24px;font-weight:800;color:var(--sageDk);pointer-events:none;animation:fly .7s ease-out forwards;}
+  @keyframes fly{0%{transform:translateY(0);opacity:1;}100%{transform:translateY(-70px);opacity:0;}}
+  .part{position:absolute;border-radius:50%;pointer-events:none;transition:transform .5s ease-out,opacity .5s ease-out;}
+  .controls{margin-top:12px;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;max-width:420px;flex-wrap:wrap;}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:16px;padding:11px 20px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 0 var(--accentDk);transition:transform .06s,box-shadow .06s;}
   .btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accentDk);}
   .btn.ghost{background:#f3ead9;color:var(--accentDk);box-shadow:0 4px 0 #e0d2bb;}
   .btn.ghost:active{box-shadow:0 1px 0 #e0d2bb;}
   .btn:disabled{opacity:.4;box-shadow:none;}
-  .start .btn,.overlay .btn{width:min(76%,240px);}
-  .tg{background:#f3ead9;color:var(--accentDk);border:none;border-radius:12px;font-size:12px;font-weight:800;padding:8px 12px;cursor:pointer;box-shadow:0 3px 0 #e0d2bb;}
+  .tg{background:#f3ead9;color:var(--accentDk);border:none;border-radius:12px;font-size:12px;font-weight:800;padding:8px 11px;cursor:pointer;box-shadow:0 3px 0 #e0d2bb;}
   .tg.off{opacity:.4;}
-  .tip{margin-top:10px;font-size:11px;color:var(--soft);text-align:center;line-height:1.7;}
-  .start,.overlay{position:absolute;inset:0;background:rgba(250,245,236,.95);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;z-index:30;}
+  .coins{display:flex;align-items:center;gap:5px;font-size:14px;font-weight:800;color:var(--accentDk);}
+  .coin-ico{width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fbe6a8,var(--gold));box-shadow:inset 0 0 0 1.5px #c79433;}
+  .tip{margin-top:9px;font-size:11px;color:var(--soft);text-align:center;line-height:1.7;}
+  .start,.overlay{position:absolute;inset:0;background:rgba(250,245,236,.96);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;z-index:30;}
   .overlay{display:none;}.overlay.show{display:flex;}.start.hide{display:none;}
-  h2{font-size:23px;font-weight:800;color:var(--ink);letter-spacing:1px;}
+  h2{font-size:23px;font-weight:800;letter-spacing:1px;}
   .res{font-size:15px;color:var(--soft);}.res b{color:var(--accentDk);font-size:24px;}
   .gain{font-size:14px;color:var(--gold);font-weight:800;}
-  .hist{font-size:12px;color:var(--soft);}
-  .sub{font-size:12px;color:var(--soft);margin-top:-2px;margin-bottom:3px;line-height:1.6;}
-  .banner{position:absolute;top:42%;left:0;right:0;text-align:center;font-size:25px;font-weight:800;color:var(--sageDk);pointer-events:none;opacity:0;z-index:20;text-shadow:0 2px 12px rgba(255,255,255,.9);}
-  .banner.show{animation:bn 1.2s ease;}
-  @keyframes bn{0%{opacity:0;transform:scale(.6);}25%{opacity:1;transform:scale(1.1);}75%{opacity:1;}100%{opacity:0;}}
-  .winflash{position:absolute;inset:0;pointer-events:none;z-index:19;opacity:0;background:radial-gradient(circle at 50% 45%,rgba(220,171,77,.4),transparent 66%);}
-  .winflash.go{animation:wf .7s ease;}
-  @keyframes wf{0%{opacity:.8;}100%{opacity:0;}}
-  .confetti{position:absolute;pointer-events:none;z-index:21;will-change:transform,opacity;transition:transform .9s ease-out,opacity .9s ease-out;}
-  .skinlist{display:flex;flex-direction:column;gap:8px;width:min(88%,320px);max-height:54%;overflow:auto;}
-  .skinrow{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:12px;padding:9px 13px;font-size:14px;font-weight:700;box-shadow:0 2px 8px var(--shadow);}
-  .skinrow .btn{padding:7px 14px;font-size:12px;}
+  .sub{font-size:12px;color:var(--soft);margin:-2px 0 3px;line-height:1.7;}
+  .shoplist{display:flex;flex-direction:column;gap:8px;width:min(90%,340px);max-height:58%;overflow:auto;}
+  .shoprow{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:12px;padding:9px 13px;font-size:13px;font-weight:700;box-shadow:0 2px 8px var(--shadow);text-align:left;}
+  .shoprow .d{font-size:11px;color:var(--soft);font-weight:600;}
+  .shoprow .btn{padding:7px 12px;font-size:12px;}
+  .start .btn,.overlay>.btn{width:min(74%,240px);}
   .modal{position:fixed;inset:0;background:rgba(70,55,35,.4);display:none;align-items:center;justify-content:center;z-index:80;}
   .modal.show{display:flex;}
-  .card{background:var(--card);border-radius:20px;padding:26px;text-align:center;display:flex;flex-direction:column;gap:13px;max-width:290px;box-shadow:0 14px 40px rgba(90,70,40,.3);}
-  .card .msg{font-size:14px;color:var(--soft);line-height:1.9;}
-  .card .msg b{color:var(--accentDk);font-size:18px;}
+  .modalcard{background:var(--card);border-radius:20px;padding:26px;text-align:center;display:flex;flex-direction:column;gap:13px;max-width:290px;box-shadow:0 14px 40px rgba(90,70,40,.3);}
+  .modalcard .msg{font-size:14px;color:var(--soft);line-height:1.9;}.modalcard .msg b{color:var(--accentDk);font-size:18px;}
   #achToast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-22px);background:var(--sage);color:#fff;font-size:13px;font-weight:800;padding:10px 18px;border-radius:14px;box-shadow:0 6px 18px rgba(120,90,40,.3);opacity:0;transition:.3s;pointer-events:none;z-index:90;white-space:nowrap;}
   #achToast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-  .achrow{align-items:center;}
-  .achrow .desc{font-size:11px;color:var(--soft);font-weight:600;}
 </style>
 </head>
 <body>
   <div class="top">
-    <div class="title">一触连爆<small>CHAIN REACTION</small></div>
+    <div class="title">再吹一点点<small>HOLD · GROW · CASH OUT</small></div>
     <div class="stat">
       <div class="box"><div class="l">分数</div><div class="v" id="score">0</div></div>
       <div class="box"><div class="l">最高</div><div class="v" id="best">0</div></div>
     </div>
   </div>
 
-  <div class="order">
-    <span id="hudL">—</span>
-    <span class="prog" id="hudR">—</span>
+  <div class="bar">
+    <div class="lives" id="lives"></div>
+    <div class="streak" id="streak"></div>
+    <div class="shield" id="shield"></div>
   </div>
 
   <div class="wrap" id="wrap">
-    <div class="combo" id="combo"></div>
-    <div class="winflash" id="winflash"></div>
-    <div class="banner" id="banner"></div>
+    <div class="roundNum" id="roundNum"></div>
+    <div class="danger" id="danger">要爆了！快松手！</div>
+    <div class="balloonBox" id="balloonBox">
+      <div class="balloon" id="balloon"></div>
+      <div class="knot" id="knot"></div>
+      <div class="string"></div>
+    </div>
+    <div class="hint" id="hint">按住屏幕 = 充气（分数涨）<br>松手 = 收获入袋｜吹太大会爆</div>
+    <div class="flash" id="flash"></div>
 
     <div class="start" id="startScreen">
-      <h2>一触连爆</h2>
-      <div class="sub">点一下，引爆连锁<br>碰到的小球会跟着炸开</div>
-      <button class="btn" id="modeEndless">闯关模式</button>
-      <div class="sub">每关一次点击，炸够目标过关</div>
-      <button class="btn ghost" id="modeClear">清屏模式</button>
-      <div class="sub">有限次点击清空全场，用得越少星越多</div>
-      <button class="btn ghost" id="modeDaily">每日挑战</button>
-      <div class="sub" id="dailyInfo">每天一套固定关卡，和朋友比高分</div>
-      <button class="btn ghost" id="openSkins">外观皮肤</button>
-      <button class="btn ghost" id="openAch">成就</button>
+      <h2>再吹一点点</h2>
+      <div class="sub">按住充气，越大分越高<br>见好就收，贪一秒就爆<br>连续收获不失手 = 连击翻倍</div>
+      <button class="btn" id="startBtn">开始</button>
+      <button class="btn ghost" id="openShop">升级商店</button>
     </div>
 
     <div class="overlay" id="overlay">
-      <h2 id="ovTitle">结束</h2>
-      <div class="res" id="ovLine">—</div>
+      <h2 id="ovTitle">这局结束</h2>
+      <div class="res">总共攒了 <b id="ovScore">0</b></div>
       <div class="gain" id="ovGain"></div>
       <div class="res" id="ovBest"></div>
-      <div class="hist" id="ovHist"></div>
       <button class="btn" id="againBtn">再来一局</button>
-      <button class="btn ghost" id="menuBtn">换模式</button>
+      <button class="btn ghost" id="shopFromOver">升级商店</button>
     </div>
 
-    <div class="overlay" id="rescue">
-      <h2>还差一点！</h2>
-      <div class="res" id="rescueMsg">—</div>
-      <button class="btn" id="rescueBtn">再炸一次</button>
-      <button class="btn ghost" id="giveupBtn">结束</button>
+    <div class="overlay" id="shop">
+      <h2>升级商店</h2>
+      <div class="sub">攒分换永久升级，越升越敢吹</div>
+      <div class="shoplist" id="shopList"></div>
+      <button class="btn ghost" id="shopClose">返回</button>
     </div>
-
-    <div class="overlay" id="skinPanel">
-      <h2>外观皮肤</h2>
-      <div class="sub">用金币解锁，给小球换个质感</div>
-      <div class="skinlist" id="skinList"></div>
-      <button class="btn ghost" id="skinClose">返回</button>
-    </div>
-
-    <div class="overlay" id="achPanel">
-      <h2>成就</h2>
-      <div class="sub">达成解锁，领取金币奖励</div>
-      <div class="skinlist" id="achList"></div>
-      <button class="btn ghost" id="achClose">返回</button>
-    </div>
-  </div>
-
-  <div class="items">
-    <span class="coins"><span class="coin-ico"></span><span id="coins">0</span></span>
-    <button class="item" id="itemCross">十字炸 · 装备 30金</button>
   </div>
 
   <div class="controls">
+    <span class="coins"><span class="coin-ico"></span><span id="coins">0</span></span>
     <button class="tg" id="sfx">音效</button>
     <button class="tg" id="bgm">音乐</button>
     <button class="tg" id="vib">震动</button>
   </div>
 
-  <div class="tip">瞄准小球最密的地方点下去，连锁越长分越高</div>
-
-  <input type="file" id="skinUpload" accept="image/*" style="display:none">
+  <div class="tip">胆量游戏：吹得越大越值钱，但谁也不知道它什么时候爆</div>
 
   <div id="achToast"></div>
-
-  <div class="modal" id="signin">
-    <div class="card">
-      <h2>每日签到</h2>
-      <div class="msg" id="signinMsg"></div>
-      <button class="btn" id="signinOk">领取</button>
-    </div>
-  </div>
+  <div class="modal" id="signin"><div class="modalcard"><h2>每日签到</h2><div class="msg" id="signinMsg"></div><button class="btn" id="signinOk">领取</button></div></div>
 
 <script>
 const $=id=>document.getElementById(id);
-const COLORS=["#e8927c","#e9b15a","#a9c47f","#eccb7a","#d98e6e","#c0cf8e","#e6a6a0"];
-const THEMES=[
-  "linear-gradient(160deg,#fbf4e6,#f3e7d2)",
-  "linear-gradient(160deg,#eef3e2,#dde8c8)",
-  "linear-gradient(160deg,#fbeadf,#f5d8c6)",
-  "linear-gradient(160deg,#f6ecdf,#ecdcc2)",
-  "linear-gradient(160deg,#fbe9e7,#f3d3cf)"
-];
-const SKINS=[{id:"classic",name:"糖霜 · 经典",cost:0},{id:"jelly",name:"果冻",cost:150},{id:"matte",name:"奶油哑光",cost:300},{id:"glow",name:"柔光",cost:400},{id:"custom",name:"自定义 · 上传图片",cost:0}];
-const wrap=$("wrap");
-let W,H,bubbles,rings,obstacles,level,score,best,bestKey,popped,goal,chainN,playing,resolving,raf,lastT;
-let mode="endless",tapUsed,tapsLeft,totalStars,chaining=false,shakeMag=0,actx=null,armed=null,continues=0,rng=Math.random;
+const wrap=$("wrap"), balloon=$("balloon"), knot=$("knot"), box=$("balloonBox");
+let total,best,lives,shields,streak,playing,holding,risk,roundScore,popPoint,raf,lastT,dangerStart=55;
+let actx=null,master=null,comp=null,bgmTimer=null,bgmIdx=0,bgmGain=null,infOsc=null,infGain=null;
 let coins=parseInt(localStorage.getItem("cb_coins")||"0");
 let sfxOn=localStorage.getItem("cb_sfx")!=="0", bgmOn=localStorage.getItem("cb_bgm")!=="0", vibOn=localStorage.getItem("cb_vib")!=="0";
-let ownedSkins, selectedSkin;
-let stats, achDone, rescuedRun=false;
-const COST={cross:30};
-const ACH=[
-  {id:"first",name:"初次过关",desc:"通过第一关",coin:30,ok:s=>s.maxlevel>=1},
-  {id:"c10",name:"连锁达人",desc:"单次连锁炸到 10 个",coin:50,ok:s=>s.maxchain>=10},
-  {id:"c20",name:"连锁大师",desc:"单次连锁炸到 20 个",coin:100,ok:s=>s.maxchain>=20},
-  {id:"lv10",name:"闯关高手",desc:"闯关或每日到第 10 关",coin:80,ok:s=>s.maxlevel>=10},
-  {id:"clr3",name:"完美清屏",desc:"清屏模式拿到 3 星",coin:80,ok:s=>s.clear3>=1},
-  {id:"pop1k",name:"爆破狂人",desc:"累计炸掉 1000 个球",coin:100,ok:s=>s.pop>=1000},
-  {id:"streak7",name:"七日不断",desc:"连续登录 7 天",coin:100,ok:s=>s.streak7>=1},
-  {id:"skin",name:"爱打扮",desc:"解锁一款皮肤",coin:30,ok:s=>s.skin>=1},
-  {id:"rescue",name:"起死回生",desc:"用续命过一关",coin:30,ok:s=>s.rescue>=1},
-  {id:"daily",name:"每日一爆",desc:"完成一次每日挑战",coin:30,ok:s=>s.dailydone>=1}
-];
-function loadStats(){ try{stats=JSON.parse(localStorage.getItem("cb_stats")||"{}");}catch(e){stats={};}
-  ["pop","maxchain","maxlevel","clear3","streak7","skin","rescue","dailydone"].forEach(k=>{if(stats[k]==null)stats[k]=0;}); }
-function saveStats(){ localStorage.setItem("cb_stats",JSON.stringify(stats)); }
-function loadAch(){ try{achDone=JSON.parse(localStorage.getItem("cb_ach")||"[]");}catch(e){achDone=[];} }
-let achQueue=[];
-function achToast(a){ achQueue.push(a); if(achQueue.length===1) showAchToast(); }
-function showAchToast(){ const a=achQueue[0]; if(!a)return; const t=$("achToast"); t.textContent="成就达成 · "+a.name+"　+"+a.coin+"金"; t.classList.add("show");
-  setTimeout(()=>{ t.classList.remove("show"); achQueue.shift(); if(achQueue.length)setTimeout(showAchToast,260); },1900); }
-function checkAchievements(){ ACH.forEach(a=>{ if(!achDone.includes(a.id)&&a.ok(stats)){ achDone.push(a.id); localStorage.setItem("cb_ach",JSON.stringify(achDone)); setCoins(coins+a.coin); achToast(a); } }); }
-function renderAchList(){ const box=$("achList"); box.innerHTML="";
-  ACH.forEach(a=>{ const done=achDone.includes(a.id); const row=document.createElement("div"); row.className="skinrow achrow";
-    const left=document.createElement("span"); left.innerHTML=a.name+"<br><span class='desc'>"+a.desc+"</span>";
-    const right=document.createElement("span"); right.style.fontWeight="800"; right.style.fontSize="12px";
-    if(done){right.textContent="已达成";right.style.color="var(--sageDk)";} else {right.textContent="+"+a.coin+"金";right.style.color="var(--soft)";}
-    row.appendChild(left); row.appendChild(right); box.appendChild(row); }); }
+let stats, achDone;
 
-function rectsize(){const r=wrap.getBoundingClientRect();W=r.width;H=r.height;}
+/* ---------- upgrades ---------- */
+const UP=[
+  {id:"reward", name:"收割加成", desc:"每次收获分数 +12%", base:80, max:8, get:l=>1+l*0.12},
+  {id:"safe",   name:"气球更耐压", desc:"爆点更靠后，能吹更大", base:120, max:6, get:l=>l*4},
+  {id:"speed",  name:"涨分更快",   desc:"充气时分数涨得更快", base:100, max:6, get:l=>1+l*0.15},
+  {id:"shield", name:"护盾",       desc:"每局开局多 1 个护盾(抵一次爆)", base:200, max:3, get:l=>l}
+];
+function upLv(id){ return parseInt(localStorage.getItem("cb_up_"+id)||"0"); }
+function upVal(id){ const u=UP.find(x=>x.id===id); return u.get(upLv(id)); }
+function upCost(u){ return Math.round(u.base*Math.pow(1.8,upLv(u.id))); }
 
 /* ---------- audio ---------- */
-let master=null,comp=null;
 function initAudio(){ if(actx)return; try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){actx=null;}
-  if(actx){ comp=actx.createDynamicsCompressor(); comp.threshold.value=-8;comp.knee.value=18;comp.ratio.value=12;comp.attack.value=0.003;comp.release.value=0.25;
-    master=actx.createGain(); master.gain.value=1.0; comp.connect(master); master.connect(actx.destination); } }
-function dest(){ return comp||actx.destination; }
-function playPop(d){ if(!actx||!sfxOn)return; const f=261.6*Math.pow(2,Math.min(d-1,28)/12);
-  const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime; o.type="triangle";o.frequency.value=f;
-  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.7,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+0.16);
-  o.connect(g);g.connect(dest());o.start(t);o.stop(t+0.18); }
-let bgmGain=null,bgmTimer=null,bgmIdx=0;
-const PROG=[[261.63,329.63,392.00],[220.00,261.63,329.63],[174.61,220.00,261.63],[196.00,246.94,293.66]];
-const ARP=[0,1,2,1,0,1,2,1];
-function bgmTone(freq,dur,type,vol){ const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;
-  o.type=type;o.frequency.value=freq; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.05); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  o.connect(g);g.connect(bgmGain);o.start(t);o.stop(t+dur+0.06); }
-function startBGM(){ if(!actx||!bgmOn||bgmTimer)return;
-  if(!bgmGain){bgmGain=actx.createGain();bgmGain.gain.value=1.0;bgmGain.connect(dest());}
-  const stepFn=()=>{ if(!bgmOn){bgmTimer=null;return;}
-    const chord=PROG[Math.floor(bgmIdx/8)%PROG.length], w=bgmIdx%8;
-    bgmTone(chord[ARP[w]],0.55,"sine",0.30);
-    if(w===0) bgmTone(chord[0]/2,1.4,"triangle",0.26);
-    bgmIdx++; bgmTimer=setTimeout(stepFn,380); };
-  stepFn(); }
+  if(actx){ comp=actx.createDynamicsCompressor(); comp.threshold.value=-8;comp.ratio.value=12;comp.attack.value=0.003;comp.release.value=0.25; master=actx.createGain(); master.gain.value=1; comp.connect(master); master.connect(actx.destination); } }
+function dest(){return comp||actx.destination;}
+function tone(f,dur,type,vol){ if(!actx||!sfxOn)return; const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;
+  o.type=type||"triangle";o.frequency.value=f; g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.5,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g);g.connect(dest());o.start(t);o.stop(t+dur+0.05); }
+function chord(freqs,dur,vol){ freqs.forEach((f,i)=>setTimeout(()=>tone(f,dur,"triangle",vol),i*55)); }
+function noise(dur,vol){ if(!actx||!sfxOn)return; const n=actx.sampleRate*dur, buf=actx.createBuffer(1,n,actx.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n); const s=actx.createBufferSource();s.buffer=buf; const g=actx.createGain();g.gain.value=vol||0.5; s.connect(g);g.connect(dest());s.start(); }
+function startInflateTone(){ if(!actx||!sfxOn||infOsc)return; infOsc=actx.createOscillator();infGain=actx.createGain(); infOsc.type="sawtooth";infOsc.frequency.value=180; infGain.gain.value=0.08; infOsc.connect(infGain);infGain.connect(dest());infOsc.start(); }
+function stopInflateTone(){ if(infOsc){try{infOsc.stop();}catch(e){} infOsc=null;infGain=null;} }
+/* gentle BGM */
+const PROG=[[261.63,329.63,392.00],[220.00,261.63,329.63],[174.61,220.00,261.63],[196.00,246.94,293.66]],ARP=[0,1,2,1,0,1,2,1];
+function bgmTone(f,dur,type,vol){ const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.05);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(bgmGain);o.start(t);o.stop(t+dur+0.06); }
+function startBGM(){ if(!actx||!bgmOn||bgmTimer)return; if(!bgmGain){bgmGain=actx.createGain();bgmGain.gain.value=1;bgmGain.connect(dest());}
+  const step=()=>{ if(!bgmOn){bgmTimer=null;return;} const c=PROG[Math.floor(bgmIdx/8)%PROG.length],w=bgmIdx%8; bgmTone(c[ARP[w]],0.55,"sine",0.26); if(w===0)bgmTone(c[0]/2,1.4,"triangle",0.22); bgmIdx++; bgmTimer=setTimeout(step,380); }; step(); }
 function stopBGM(){ if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;} }
 function buzz(ms){ if(vibOn&&navigator.vibrate)navigator.vibrate(ms); }
 
-/* ---------- skins ---------- */
-function loadSkins(){ try{ownedSkins=JSON.parse(localStorage.getItem("cb_skins")||'["classic"]');}catch(e){ownedSkins=["classic"];} selectedSkin=localStorage.getItem("cb_skin")||"classic"; }
-function saveSkins(){ localStorage.setItem("cb_skins",JSON.stringify(ownedSkins)); localStorage.setItem("cb_skin",selectedSkin); }
-function applySkin(el,color,r){
-  el.style.display="";el.style.alignItems="";el.style.justifyContent="";el.textContent="";el.style.border="1px solid rgba(120,90,60,.07)";el.style.backgroundImage="";el.style.color="";el.innerHTML="";
-  switch(selectedSkin){
-    case "jelly": el.style.background="radial-gradient(circle at 32% 26%, rgba(255,255,255,.95), "+color+" 72%)"; el.style.boxShadow="0 3px 8px var(--shadow), inset 0 -4px 8px rgba(120,80,40,.14)"; break;
-    case "matte": el.style.background=color; el.style.boxShadow="0 3px 8px var(--shadow)"; el.style.border="3px solid rgba(255,255,255,.55)"; break;
-    case "glow": el.style.background=color; el.style.boxShadow="0 0 13px "+color+", 0 0 22px "+color; break;
-    case "custom": { const img=localStorage.getItem("cb_customimg"); if(img){ el.style.background="#fff"; el.style.backgroundImage="url("+img+")"; el.style.backgroundSize="cover"; el.style.backgroundPosition="center"; el.style.boxShadow="0 3px 8px var(--shadow)"; } else { el.style.background=color; } break; }
-    default: el.style.background="radial-gradient(circle at 35% 30%, rgba(255,255,255,.82), "+color+" 74%)"; el.style.boxShadow="0 3px 7px var(--shadow)";
-  }
-}
-function renderSkinList(){
-  const box=$("skinList"); box.innerHTML="";
-  SKINS.forEach(s=>{
-    const owned=s.cost===0||ownedSkins.includes(s.id), sel=selectedSkin===s.id;
-    const row=document.createElement("div"); row.className="skinrow";
-    const lab=document.createElement("span"); lab.textContent=s.name;
-    const btn=document.createElement("button"); btn.className="btn ghost";
-    if(s.id==="custom"){ btn.textContent=(sel?"使用中 · 换图":"上传图片并使用"); btn.onclick=()=>$("skinUpload").click(); }
-    else if(sel){ btn.textContent="使用中"; btn.disabled=true; }
-    else if(owned){ btn.textContent="使用"; btn.onclick=()=>{ selectedSkin=s.id; saveSkins(); renderSkinList(); }; }
-    else { btn.textContent="解锁 "+s.cost+"金"; btn.disabled=coins<s.cost; btn.onclick=()=>{ if(coins>=s.cost){ setCoins(coins-s.cost); ownedSkins.push(s.id); selectedSkin=s.id; saveSkins(); stats.skin=1; saveStats(); checkAchievements(); renderSkinList(); } }; }
-    row.appendChild(lab); row.appendChild(btn); box.appendChild(row);
-  });
-}
+/* ---------- stats / achievements ---------- */
+const ACH=[
+  {id:"first",name:"第一桶金",desc:"成功收获一次",coin:30,ok:s=>s.banks>=1},
+  {id:"big100",name:"贪心一点",desc:"单次收获 100 分以上",coin:50,ok:s=>s.maxround>=100},
+  {id:"streak5",name:"稳如老手",desc:"连击达到 5",coin:60,ok:s=>s.maxstreak>=5},
+  {id:"streak10",name:"心脏强大",desc:"连击达到 10",coin:120,ok:s=>s.maxstreak>=10},
+  {id:"run1000",name:"气球大亨",desc:"单局攒到 1000 分",coin:120,ok:s=>s.maxtotal>=1000},
+  {id:"upg",name:"会过日子",desc:"买一个升级",coin:40,ok:s=>s.upg>=1},
+  {id:"streak7d",name:"七日不断",desc:"连续登录 7 天",coin:100,ok:s=>s.streak7>=1}
+];
+function loadStats(){ try{stats=JSON.parse(localStorage.getItem("cb_b_stats")||"{}");}catch(e){stats={};} ["banks","maxround","maxstreak","maxtotal","upg","streak7"].forEach(k=>{if(stats[k]==null)stats[k]=0;}); }
+function saveStats(){ localStorage.setItem("cb_b_stats",JSON.stringify(stats)); }
+function loadAch(){ try{achDone=JSON.parse(localStorage.getItem("cb_b_ach")||"[]");}catch(e){achDone=[];} }
+let aq=[]; function achToast(a){aq.push(a);if(aq.length===1)showAch();}
+function showAch(){ const a=aq[0];if(!a)return; const t=$("achToast");t.textContent="成就达成 · "+a.name+"　+"+a.coin+"金";t.classList.add("show"); setTimeout(()=>{t.classList.remove("show");aq.shift();if(aq.length)setTimeout(showAch,260);},1900); }
+function checkAch(){ ACH.forEach(a=>{ if(!achDone.includes(a.id)&&a.ok(stats)){ achDone.push(a.id);localStorage.setItem("cb_b_ach",JSON.stringify(achDone)); setCoins(coins+a.coin); achToast(a);} }); }
 
-/* ---------- daily login ---------- */
-function dayStr(off){ const d=new Date(Date.now()-(off||0)*86400000); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
-function checkDailyLogin(){
-  const today=dayStr(0), last=localStorage.getItem("cb_lastlogin");
-  if(last===today) return;
-  let streak=parseInt(localStorage.getItem("cb_streak")||"0");
-  streak = (last===dayStr(1)) ? streak+1 : 1;
-  const reward = 30 + Math.min(streak,7)*10;
-  setCoins(coins+reward);
-  localStorage.setItem("cb_lastlogin",today); localStorage.setItem("cb_streak",String(streak));
-  if(streak>=7)stats.streak7=1; saveStats(); checkAchievements();
-  $("signinMsg").innerHTML = "连续登录 <b>"+streak+"</b> 天<br>获得 <b>"+reward+"</b> 金币<br><span style='font-size:12px;color:#9b8f7c'>明天再来，连得越久送越多</span>";
-  $("signin").classList.add("show");
-}
+function setCoins(v){ coins=v; localStorage.setItem("cb_coins",coins); $("coins").textContent=coins; }
 
-/* ---------- configs ---------- */
-function levelConf(lv){ const c=Math.min(38,14+lv*2); return {count:c,goal:Math.max(3,Math.ceil(c*Math.min(0.85,0.18+lv*0.055))),speed:Math.min(2.4,0.9+lv*0.06)}; }
-function clearConf(lv){ return {count:Math.min(46,18+lv*3),budget:5,obs:Math.min(6,lv-1),speed:Math.min(2.2,0.9+lv*0.05)}; }
-function setHUD(l,r){ $("hudL").innerHTML=l; $("hudR").innerHTML=r; }
-function clearHudL(){ $("hudL").innerHTML="第 <b>"+level+"</b> 关 · 剩 <b>"+tapsLeft+"</b> 击"; }
-function setCoins(v){ coins=v; localStorage.setItem("cb_coins",coins); $("coins").textContent=coins; refreshItems(); }
+/* ---------- daily ---------- */
+function dayStr(o){const d=new Date(Date.now()-(o||0)*86400000);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function checkDailyLogin(){ const today=dayStr(0),last=localStorage.getItem("cb_lastlogin"); if(last===today)return;
+  let s=parseInt(localStorage.getItem("cb_streak")||"0"); s=(last===dayStr(1))?s+1:1; const rw=30+Math.min(s,7)*10; setCoins(coins+rw);
+  localStorage.setItem("cb_lastlogin",today);localStorage.setItem("cb_streak",String(s)); if(s>=7)stats.streak7=1; saveStats(); checkAch();
+  $("signinMsg").innerHTML="连续登录 <b>"+s+"</b> 天<br>获得 <b>"+rw+"</b> 金币"; $("signin").classList.add("show"); }
 
 /* ---------- game ---------- */
-function dailySeed(){ const d=new Date(); return (d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())>>>0; }
-function mulberry32(a){ return function(){ a|=0;a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
-function start(m){ mode=m; initAudio(); if(actx&&actx.state==="suspended")actx.resume(); startBGM();
-  if(m==="daily"){ rng=mulberry32(dailySeed()); const today=dayStr(0); if(localStorage.getItem("cb_daily_date")!==today){localStorage.setItem("cb_daily_date",today);localStorage.setItem("cb_daily_best","0");} bestKey="cb_daily_best"; }
-  else { rng=Math.random; bestKey=(m==="endless"?"cb_best_e":"cb_best_c"); }
-  best=parseInt(localStorage.getItem(bestKey)||"0"); $("best").textContent=best;
-  level=1; score=0; totalStars=0; armed=null; continues=0; rescuedRun=false; $("score").textContent=0; $("startScreen").classList.add("hide"); startLevel(); }
-function applyTheme(lv){ wrap.style.background=THEMES[(lv-1)%THEMES.length]; }
+function renderLives(){ let h=""; for(let i=0;i<3;i++)h+="<div class='life"+(i<lives?"":" gone")+"'></div>"; $("lives").innerHTML=h; }
+function start(){ initAudio(); if(actx&&actx.state==="suspended")actx.resume(); startBGM();
+  best=parseInt(localStorage.getItem("cb_b_best")||"0"); $("best").textContent=best;
+  total=0; lives=3; shields=upVal("shield"); streak=0; playing=true;
+  $("score").textContent=0; $("overlay").classList.remove("show"); $("shop").classList.remove("show"); $("startScreen").classList.add("hide");
+  renderLives(); updateShield(); $("streak").textContent="";
+  idle(); }
+function updateShield(){ $("shield").textContent = shields>0 ? ("护盾 ×"+shields) : ""; }
+function idle(){ holding=false; risk=0; roundScore=0; balloon.style.transform="scale(1)"; balloon.style.background="radial-gradient(circle at 35% 30%, rgba(255,255,255,.85), #9bb072 72%)"; knot.style.borderTopColor="#9bb072"; box.style.transform=""; $("roundNum").textContent=""; $("danger").classList.remove("show"); $("hint").style.opacity="1"; }
 
-function spawnBubble(speed){
-  const rnd=rng(); let kind="normal";
-  const early=(mode!=="clear"&&level<=3);
-  if(!early){
-    if(mode==="clear"){ if(rnd<0.04)kind="big"; else if(rnd<0.13)kind="cross"; else if(rnd<0.18)kind="plus"; }
-    else { if(rnd<0.03)kind="big"; else if(rnd<0.11)kind="cross"; }
-  }
-  const baseR=Math.max(10,16-level*0.4);
-  const r=(kind==="big"?baseR+7:baseR+rng()*3);
-  const color=COLORS[Math.floor(rng()*COLORS.length)];
-  const b={x:r+rng()*(W-2*r),y:r+rng()*(H-2*r),vx:(rng()-.5)*1.3*speed,vy:(rng()-.5)*1.3*speed,r,color,kind,alive:true,el:null};
-  const el=document.createElement("div");el.className="bub";
-  el.style.width=el.style.height=(r*2)+"px";
-  if(kind==="normal"){ applySkin(el,color,r); }
-  else if(kind==="cross"){ el.style.background="radial-gradient(circle at 35% 30%, rgba(255,255,255,.82), "+color+" 74%)"; el.style.border="3px solid #fff"; el.style.boxShadow="0 3px 8px var(--shadow)";
-    el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center";
-    const m=document.createElement("span"); m.className="m-cross"; const sz=Math.round(r*1.15); m.style.width=sz+"px"; m.style.height=sz+"px"; el.appendChild(m); }
-  else if(kind==="big"){ el.style.background="radial-gradient(circle at 35% 30%,#fbe8bd,"+'var(--gold)'+" 75%)"; el.classList.add("big-ball"); }
-  else if(kind==="plus"){ el.style.background="radial-gradient(circle at 35% 30%,#d9ecc2,"+'var(--sage)'+" 75%)"; el.style.display="flex";el.style.alignItems="center";el.style.justifyContent="center"; el.style.color="#fff"; el.style.fontWeight="800"; el.style.fontSize=(r*0.85)+"px"; el.textContent="+1"; }
-  wrap.appendChild(el);b.el=el;bubbles.push(b);
+function startHold(){ if(!playing||holding)return; holding=true; risk=0; roundScore=0;
+  popPoint = dangerStart + Math.random()*(100 - dangerStart) + upVal("safe");   // 越耐压越能吹
+  popPoint = Math.min(popPoint, 100 + upVal("safe"));
+  lastT=performance.now(); $("hint").style.opacity="0"; startInflateTone(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop); }
+
+function loop(t){ if(!holding)return; const dt=Math.min(50,t-lastT); lastT=t;
+  risk += dt/26 * upVal("speed");
+  roundScore = Math.floor(risk + Math.max(0,risk-dangerStart)*1.2);
+  const scale = 1 + risk/42;
+  const hue = Math.max(0, 130 - risk*1.3), sat = 45 + risk*0.35;
+  balloon.style.background=`radial-gradient(circle at 35% 30%, rgba(255,255,255,.85), hsl(${hue} ${sat}% 62%) 72%)`;
+  knot.style.borderTopColor=`hsl(${hue} ${sat}% 55%)`;
+  let jit="";
+  if(risk>dangerStart){ const k=(risk-dangerStart)/(100-dangerStart); const m=k*7; jit=` translate(${(Math.random()-.5)*m}px,${(Math.random()-.5)*m}px)`; $("danger").classList.add("show");
+    if(infGain)infGain.gain.value=0.08+k*0.06; if(infOsc)infOsc.frequency.value=180+risk*6; }
+  else if(infOsc){ infOsc.frequency.value=180+risk*4; }
+  box.style.transform=jit; balloon.style.transform=`scale(${scale})`; $("roundNum").textContent=roundScore;
+  if(risk>=popPoint){ pop(); return; }
+  raf=requestAnimationFrame(loop); }
+
+function endHold(){ if(!playing||!holding)return; holding=false; stopInflateTone(); cancelAnimationFrame(raf); bank(); }
+
+function bank(){
+  streak++; const mult=1+ (streak-1)*0.15; const gain=Math.round(roundScore*mult*upVal("reward"));
+  total+=gain; $("score").textContent=total;
+  if(total>best){best=total;localStorage.setItem("cb_b_best",best);$("best").textContent=best;}
+  $("streak").textContent= streak>=2 ? ("连击 ×"+streak+"（+"+Math.round((mult-1)*100)+"%）") : "";
+  flyText("+"+gain); chord([523,659,784],0.18,0.4); buzz(15);
+  stats.banks++; if(roundScore>stats.maxround)stats.maxround=roundScore; if(streak>stats.maxstreak)stats.maxstreak=streak; if(total>stats.maxtotal)stats.maxtotal=total; saveStats(); checkAch();
+  idle();
 }
-function spawnObstacles(n){ for(let i=0;i<n;i++){ const r=16+Math.random()*6; const o={x:r+Math.random()*(W-2*r),y:r+Math.random()*(H-2*r),r};
-  const el=document.createElement("div");el.className="obs";el.style.width=el.style.height=(r*2)+"px";el.style.left=(o.x-r)+"px";el.style.top=(o.y-r)+"px";
-  wrap.appendChild(el);o.el=el;obstacles.push(o);} }
-function aliveCount(){ return bubbles.filter(b=>b.alive).length; }
-
-function startLevel(){
-  rectsize(); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove());
-  bubbles=[];rings=[];obstacles=[];popped=0;chainN=0;resolving=false;playing=true;shakeMag=0;chaining=false;armed=null;refreshItems();
-  applyTheme(level); $("overlay").classList.remove("show"); $("rescue").classList.remove("show"); $("skinPanel").classList.remove("show"); $("achPanel").classList.remove("show");
-  if(mode!=="clear"){ const cf=levelConf(level);goal=cf.goal;tapUsed=false; for(let i=0;i<cf.count;i++)spawnBubble(cf.speed);
-    setHUD((mode==="daily"?"每日 · ":"")+"第 <b>"+level+"</b> 关 · 目标 <b>"+goal+"</b>","已炸 <b>0</b>"); }
-  else { const c=clearConf(level);tapsLeft=c.budget;tapUsed=false; spawnObstacles(c.obs); for(let i=0;i<c.count;i++)spawnBubble(c.speed);
-    clearHudL(); $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球"; }
-  lastT=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+function pop(){
+  holding=false; stopInflateTone(); cancelAnimationFrame(raf);
+  balloon.style.transform="scale(0.1)"; popParticles(); noise(0.25,0.6); const fl=$("flash");fl.classList.add("go");setTimeout(()=>fl.classList.remove("go"),350);
+  box.animate([{transform:'translate(0,0)'},{transform:'translate(-8px,5px)'},{transform:'translate(7px,-4px)'},{transform:'translate(0,0)'}],{duration:300});
+  buzz([30,40,30]); streak=0; $("streak").textContent="";
+  if(shields>0){ shields--; updateShield(); $("danger").classList.remove("show"); setTimeout(idle,360); return; }
+  lives--; renderLives(); $("danger").classList.remove("show");
+  if(lives<=0){ gameOver(); } else { setTimeout(idle,420); }
 }
+function flyText(txt){ const f=document.createElement("div");f.className="fly";f.textContent=txt;wrap.appendChild(f);setTimeout(()=>f.remove(),700); }
+function popParticles(){ const cx=wrap.clientWidth/2, cy=wrap.clientHeight/2; for(let i=0;i<14;i++){ const p=document.createElement("div");p.className="part";const s=6+Math.random()*7;
+  p.style.width=p.style.height=s+"px"; p.style.background=["#cf9277","#9bb072","#dcab4d","#e8927c"][i%4]; p.style.left=cx+"px";p.style.top=cy+"px"; wrap.appendChild(p);
+  const a=Math.random()*Math.PI*2,d=40+Math.random()*90; requestAnimationFrame(()=>{p.style.transform=`translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px)`;p.style.opacity="0";}); setTimeout(()=>p.remove(),520);} }
 
-function addRing(x,y,maxR){ rings.push({x,y,r:0,maxR:maxR||46,t:0,el:null}); }
+function gameOver(){ playing=false; const earned=Math.floor(total/10); setCoins(coins+earned);
+  $("ovTitle").textContent = total>=best&&total>0 ? "新纪录！" : "这局结束";
+  $("ovScore").textContent=total; $("ovGain").textContent="金币 +"+earned+"（共 "+coins+"）"; $("ovBest").textContent="最高分 "+best;
+  setTimeout(()=>$("overlay").classList.add("show"),450); }
 
-function loop(t){
-  if(!playing)return; const dt=Math.min(50,t-lastT);lastT=t;
-  if(shakeMag>0.3){ wrap.style.transform=`translate(${(Math.random()-.5)*shakeMag}px,${(Math.random()-.5)*shakeMag}px)`; shakeMag*=0.86; } else if(shakeMag){shakeMag=0;wrap.style.transform="";}
-  bubbles.forEach(b=>{ if(!b.alive)return; b.x+=b.vx;b.y+=b.vy;
-    if(b.x<b.r){b.x=b.r;b.vx*=-1;} if(b.x>W-b.r){b.x=W-b.r;b.vx*=-1;} if(b.y<b.r){b.y=b.r;b.vy*=-1;} if(b.y>H-b.r){b.y=H-b.r;b.vy*=-1;}
-    obstacles.forEach(o=>{ const dx=b.x-o.x,dy=b.y-o.y,d=Math.hypot(dx,dy)||1; if(d<b.r+o.r){ const nx=dx/d,ny=dy/d;b.x=o.x+nx*(b.r+o.r);b.y=o.y+ny*(b.r+o.r);const dot=b.vx*nx+b.vy*ny;b.vx-=2*dot*nx;b.vy-=2*dot*ny; } });
-    b.el.style.left=(b.x-b.r)+"px";b.el.style.top=(b.y-b.r)+"px"; });
-  for(let i=rings.length-1;i>=0;i--){ const rg=rings[i];rg.t+=dt;
-    if(rg.t<300)rg.r=rg.maxR*rg.t/300; else if(rg.t<560)rg.r=rg.maxR; else if(rg.t<800)rg.r=rg.maxR*(1-(rg.t-560)/240); else {rg.el&&rg.el.remove();rings.splice(i,1);continue;}
-    if(!rg.el){rg.el=document.createElement("div");rg.el.className="ring";wrap.appendChild(rg.el);}
-    rg.el.style.left=rg.x+"px";rg.el.style.top=rg.y+"px";rg.el.style.width=rg.el.style.height=(rg.r*2)+"px";rg.el.style.opacity=String(Math.max(0,1-rg.t/800));
-    if(rg.t<560){ bubbles.forEach(b=>{ if(b.alive&&Math.hypot(b.x-rg.x,b.y-rg.y)<rg.r+b.r)popBubble(b); }); } }
-  if(chaining&&rings.length===0){ chaining=false; postChain(); }
-  raf=requestAnimationFrame(loop);
-}
+/* ---------- shop ---------- */
+function renderShop(){ const box2=$("shopList"); box2.innerHTML="";
+  UP.forEach(u=>{ const lv=upLv(u.id), maxed=lv>=u.max, cost=upCost(u);
+    const row=document.createElement("div");row.className="shoprow";
+    const left=document.createElement("span"); left.innerHTML=u.name+" <span style='color:var(--sageDk)'>Lv."+lv+"</span><br><span class='d'>"+u.desc+"</span>";
+    const btn=document.createElement("button");btn.className="btn";
+    if(maxed){btn.textContent="已满级";btn.disabled=true;btn.className="btn ghost";}
+    else{ btn.textContent=cost+"金"; btn.disabled=coins<cost; btn.onclick=()=>{ if(coins>=upCost(u)){ setCoins(coins-upCost(u)); localStorage.setItem("cb_up_"+u.id,String(upLv(u.id)+1)); stats.upg=1; saveStats(); checkAch(); renderShop(); } }; }
+    row.appendChild(left);row.appendChild(btn);box2.appendChild(row); }); }
 
-function popBubble(b){
-  b.alive=false;chainN++;popped++;score+=chainN; $("score").textContent=score;
-  stats.pop++; if(chainN>stats.maxchain)stats.maxchain=chainN;
-  if(score>best){best=score;localStorage.setItem(bestKey,best);$("best").textContent=best;}
-  b.el.classList.add("pop");playPop(chainN);buzz(10);particles(b.x,b.y,b.color);
-  shakeMag=Math.min(11,shakeMag+1.6+chainN*0.18);showCombo();
-  if(mode!=="clear")$("hudR").innerHTML="已炸 <b>"+popped+"</b>"; else $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球";
-  if(b.kind==="cross")crossBlast(b.x,b.y);
-  else if(b.kind==="big")addRing(b.x,b.y,96);
-  else if(b.kind==="plus"){addRing(b.x,b.y); if(mode==="clear"){tapsLeft++;clearHudL();banner("+1 点击");}}
-  else addRing(b.x,b.y);
-}
-function crossBlast(x,y){ addRing(x,y,58);beam(y,true);beam(x,false);shakeMag=Math.min(13,shakeMag+4);
-  const band=33; bubbles.forEach(bb=>{ if(bb.alive&&(Math.abs(bb.y-y)<band||Math.abs(bb.x-x)<band))popBubble(bb); }); }
-function beam(p,h){ const d=document.createElement("div");d.className="beam";
-  if(h){d.style.left="0";d.style.right="0";d.style.top=(p-3)+"px";d.style.height="6px";} else {d.style.top="0";d.style.bottom="0";d.style.left=(p-3)+"px";d.style.width="6px";}
-  wrap.appendChild(d);setTimeout(()=>d.remove(),420); }
-function particles(x,y,color){ for(let i=0;i<5;i++){ const p=document.createElement("div");p.className="part";const s=4+Math.random()*5;
-  p.style.width=p.style.height=s+"px";p.style.background=color;p.style.left=(x-s/2)+"px";p.style.top=(y-s/2)+"px";p.style.boxShadow="0 0 6px "+color;wrap.appendChild(p);
-  const a=Math.random()*Math.PI*2,dd=18+Math.random()*34; requestAnimationFrame(()=>{p.style.transform=`translate(${Math.cos(a)*dd}px,${Math.sin(a)*dd}px)`;p.style.opacity="0";}); setTimeout(()=>p.remove(),520);} }
-let comboHideT=null; function showCombo(){ if(chainN<3)return; const c=$("combo"); c.textContent="连锁 x"+chainN; c.style.fontSize=Math.min(50,22+chainN*1.5)+"px"; c.classList.add("show"); clearTimeout(comboHideT); comboHideT=setTimeout(()=>c.classList.remove("show"),700); }
-
-function tap(e){
-  if(!playing||resolving||rings.length>0)return;
-  if(mode!=="clear"&&tapUsed)return; if(mode==="clear"&&tapsLeft<=0)return;
-  initAudio(); if(actx&&actx.state==="suspended")actx.resume(); startBGM();
-  const r=wrap.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
-  buzz(20);chainN=0;tapUsed=true;chaining=true;
-  if(mode==="clear"){tapsLeft--;clearHudL();}
-  if(armed==="cross"){ crossBlast(x,y); armed=null; refreshItems(); }
-  else addRing(x,y);
-}
-
-function postChain(){
-  saveStats(); checkAchievements();   // 连锁/累计炸球 成就即时判定
-  if(mode!=="clear"){ resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform="";
-    if(popped>=goal){ if(level>stats.maxlevel)stats.maxlevel=level; if(mode==="daily")stats.dailydone=1; if(rescuedRun){stats.rescue=1;rescuedRun=false;} saveStats(); checkAchievements();
-      celebrate("过关啦！");level++;setTimeout(startLevel,1300); } else tryRescueOrEnd(); }
-  else { if(aliveCount()===0){ const usedTaps=clearConf(level).budget-tapsLeft;
-      const stars=usedTaps<=2?3:(usedTaps<=3?2:1); totalStars+=stars; score+=Math.max(0,tapsLeft)*60*level; $("score").textContent=score;
-      if(score>best){best=score;localStorage.setItem(bestKey,best);$("best").textContent=best;}
-      if(stars===3)stats.clear3=1; if(level>stats.maxlevel)stats.maxlevel=level; if(rescuedRun){stats.rescue=1;rescuedRun=false;} saveStats(); checkAchievements();
-      resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform=""; celebrate("清屏！ "+"★".repeat(stars));level++;setTimeout(startLevel,1400);
-    } else if(tapsLeft<=0){ resolving=true;playing=false;cancelAnimationFrame(raf);wrap.style.transform=""; tryRescueOrEnd(); }
-    else { $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球"; } }
-}
-
-function rescueCost(){ return 30*Math.pow(2,continues); }
-function tryRescueOrEnd(){ if(coins>=rescueCost()) offerRescue(); else gameOver(); }
-function offerRescue(){
-  const cost=rescueCost();
-  $("rescueMsg").innerHTML = mode==="endless" ? "还差 <b>"+(goal-popped)+"</b> 个就过关！" : "还剩 <b>"+aliveCount()+"</b> 个没清掉！";
-  const btn=$("rescueBtn"); btn.textContent="再炸一次（"+cost+"金）"; btn.disabled=coins<cost;
-  $("rescue").classList.add("show");
-}
-function doRescue(){
-  const cost=rescueCost(); if(coins<cost)return;
-  setCoins(coins-cost); continues++; rescuedRun=true;
-  $("rescue").classList.remove("show");
-  resolving=false; playing=true; chaining=false; tapUsed=false;
-  if(mode==="clear"){ tapsLeft+=2; clearHudL(); $("hudR").innerHTML="剩 <b>"+aliveCount()+"</b> 球"; }
-  lastT=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
-}
-
-function banner(txt){const b=$("banner");b.textContent=txt;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");}
-function confetti(){ for(let i=0;i<30;i++){ const p=document.createElement("div");p.className="confetti";
-  const s=6+Math.random()*7; p.style.width=p.style.height=s+"px"; p.style.background=COLORS[i%COLORS.length]; p.style.borderRadius=(Math.random()<0.5?"50%":"2px");
-  p.style.left=(W/2)+"px"; p.style.top=(H*0.4)+"px"; wrap.appendChild(p);
-  const ang=Math.random()*Math.PI*2, dist=70+Math.random()*170; const tx=Math.cos(ang)*dist, ty=Math.sin(ang)*dist+120;
-  requestAnimationFrame(()=>{ p.style.transform=`translate(${tx}px,${ty}px) rotate(${Math.random()*720}deg)`; p.style.opacity="0"; }); setTimeout(()=>p.remove(),950); } }
-function fanfare(){ if(!actx||!sfxOn)return; [0,4,7,12].forEach((semi,i)=>setTimeout(()=>{
-    const f=392*Math.pow(2,semi/12), o=actx.createOscillator(), g=actx.createGain(), t=actx.currentTime; o.type="triangle"; o.frequency.value=f;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.7,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.3);
-    o.connect(g);g.connect(dest());o.start(t);o.stop(t+0.32); }, i*95)); }
-function celebrate(txt){ banner(txt); confetti(); fanfare(); const f=$("winflash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go"); buzz([20,40,30]); }
-function pushHistory(s){ const k="cb_hist_"+mode; let h=[]; try{h=JSON.parse(localStorage.getItem(k)||"[]");}catch(e){} h.unshift(s);h=h.slice(0,6);localStorage.setItem(k,JSON.stringify(h));return h; }
-function gameOver(){
-  buzz(120);
-  const earned=Math.floor(score/12)+(mode==="clear"?totalStars*5:0);
-  setCoins(coins+earned);
-  if(mode!=="clear"){ $("ovTitle").textContent=popped>0?"差一点…只炸了 "+popped+"/"+goal:"歪了，一颗都没炸到"; $("ovLine").innerHTML=(mode==="daily"?"每日挑战 · ":"")+"打到第 <b>"+level+"</b> 关 · 得分 <b>"+score+"</b>"; }
-  else { $("ovTitle").textContent="没清完…"; $("ovLine").innerHTML="到第 <b>"+level+"</b> 关 · 星 <b>"+totalStars+"</b> · 得分 <b>"+score+"</b>"; }
-  $("ovGain").textContent="金币 +"+earned+"（共 "+coins+"）";
-  $("ovBest").textContent = score>=best ? "新纪录！" : "最高分 "+best;
-  const h=pushHistory(score); $("ovHist").textContent="最近："+h.join(" · ");
-  setTimeout(()=>$("overlay").classList.add("show"),350);
-}
-
-/* ---------- items / settings ---------- */
-function refreshItems(){ [["itemCross","cross"]].forEach(([id,key])=>{ const el=$(id); el.classList.toggle("armed",armed===key); el.classList.toggle("poor",coins<COST[key]); }); }
-function armItem(key){ if(armed===key){ armed=null; refreshItems(); return; }
-  if(!playing){ banner("开局后再用道具"); return; }
-  if(coins<COST[key]){ banner("金币不够"); return; }
-  if(rings.length>0) return;
-  setCoins(coins-COST[key]); armed=key; refreshItems(); }
-$("itemCross").onclick=()=>armItem("cross");
+/* ---------- settings ---------- */
 function refreshToggles(){ $("sfx").classList.toggle("off",!sfxOn);$("bgm").classList.toggle("off",!bgmOn);$("vib").classList.toggle("off",!vibOn); }
 $("sfx").onclick=()=>{sfxOn=!sfxOn;localStorage.setItem("cb_sfx",sfxOn?"1":"0");refreshToggles();};
 $("bgm").onclick=()=>{bgmOn=!bgmOn;localStorage.setItem("cb_bgm",bgmOn?"1":"0");if(bgmOn)startBGM();else stopBGM();refreshToggles();};
 $("vib").onclick=()=>{vibOn=!vibOn;localStorage.setItem("cb_vib",vibOn?"1":"0");if(vibOn)buzz(20);refreshToggles();};
 
-/* ---------- wiring ---------- */
-wrap.addEventListener("pointerdown",e=>{e.preventDefault();tap(e);});
-function updateDailyInfo(){ const today=dayStr(0); const bd=(localStorage.getItem("cb_daily_date")===today)?(localStorage.getItem("cb_daily_best")||"0"):"0"; $("dailyInfo").textContent="每天一套固定关卡 · 今日最佳 "+bd+" 分"; }
-$("modeEndless").onclick=()=>start("endless");
-$("modeClear").onclick=()=>start("clear");
-$("modeDaily").onclick=()=>start("daily");
-$("openSkins").onclick=()=>{ renderSkinList(); $("startScreen").classList.add("hide"); $("skinPanel").classList.add("show"); };
-$("skinClose").onclick=()=>{ $("skinPanel").classList.remove("show"); $("startScreen").classList.remove("hide"); };
-$("openAch").onclick=()=>{ renderAchList(); $("startScreen").classList.add("hide"); $("achPanel").classList.add("show"); };
-$("achClose").onclick=()=>{ $("achPanel").classList.remove("show"); $("startScreen").classList.remove("hide"); };
-$("skinUpload").onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{ const img=new Image(); img.onload=()=>{
-    const sz=128, c=document.createElement("canvas"); c.width=c.height=sz; const ctx=c.getContext("2d");
-    const s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
-    ctx.drawImage(img,sx,sy,s,s,0,0,sz,sz);
-    const data=c.toDataURL("image/jpeg",0.82);
-    try{ localStorage.setItem("cb_customimg",data); if(!ownedSkins.includes("custom"))ownedSkins.push("custom"); selectedSkin="custom"; saveSkins(); renderSkinList(); }
-    catch(err){ alert("图片存不下，换张更小的试试"); }
-  }; img.onerror=()=>alert("图片读取失败"); img.src=ev.target.result; };
-  reader.readAsDataURL(f); e.target.value=""; };
-$("againBtn").onclick=()=>start(mode);
-$("rescueBtn").onclick=doRescue;
-$("giveupBtn").onclick=()=>{ $("rescue").classList.remove("show"); gameOver(); };
-$("menuBtn").onclick=()=>{ $("overlay").classList.remove("show"); wrap.querySelectorAll(".bub,.ring,.part,.beam,.obs").forEach(e=>e.remove()); $("startScreen").classList.remove("hide"); playing=false; armed=null; refreshItems(); setHUD("—","—"); updateDailyInfo(); };
+/* ---------- input / wiring ---------- */
+wrap.addEventListener("pointerdown",e=>{ if($("startScreen").classList.contains("hide")&&!$("overlay").classList.contains("show")&&!$("shop").classList.contains("show")){e.preventDefault();startHold();} });
+wrap.addEventListener("pointerup",e=>{e.preventDefault();endHold();});
+wrap.addEventListener("pointercancel",endHold); wrap.addEventListener("pointerleave",endHold);
+window.addEventListener("contextmenu",e=>e.preventDefault());
+$("startBtn").onclick=start; $("againBtn").onclick=start;
+$("openShop").onclick=()=>{ renderShop(); $("startScreen").classList.add("hide"); $("shop").classList.add("show"); };
+$("shopFromOver").onclick=()=>{ renderShop(); $("overlay").classList.remove("show"); $("shop").classList.add("show"); };
+$("shopClose").onclick=()=>{ $("shop").classList.remove("show"); $("startScreen").classList.remove("hide"); playing=false; };
 $("signinOk").onclick=()=>$("signin").classList.remove("show");
-window.addEventListener("resize",()=>{if(playing)rectsize();});
-loadStats(); loadAch(); loadSkins(); $("coins").textContent=coins; refreshToggles(); refreshItems(); updateDailyInfo(); checkAchievements(); checkDailyLogin();
+
+loadStats(); loadAch(); best=parseInt(localStorage.getItem("cb_b_best")||"0"); $("best").textContent=best; $("coins").textContent=coins; refreshToggles(); checkAch(); checkDailyLogin();
 </script>
 </body>
 </html>
